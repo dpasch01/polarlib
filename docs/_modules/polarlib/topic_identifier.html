@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>polarlib.topic_identifier &mdash; POLARLib 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            POLARLib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">polarlib</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">POLARLib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">polarlib.topic_identifier</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for polarlib.topic_identifier</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">string</span><span class="o">,</span> <span class="nn">nltk</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">logging</span><span class="o">,</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">Parallel</span><span class="p">,</span> <span class="n">delayed</span>
+<span class="kn">from</span> <span class="nn">funcy</span> <span class="kn">import</span> <span class="n">log_durations</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">import</span> <span class="nn">pickle5</span> <span class="k">as</span> <span class="nn">pickle</span>
+
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">nltk.corpus</span> <span class="kn">import</span> <span class="n">stopwords</span>
+<span class="kn">from</span> <span class="nn">textblob</span> <span class="kn">import</span> <span class="n">TextBlob</span><span class="p">,</span> <span class="n">Word</span>
+<span class="kn">from</span> <span class="nn">sentence_transformers</span> <span class="kn">import</span> <span class="n">SentenceTransformer</span><span class="p">,</span> <span class="n">util</span>
+
+<div class="viewcode-block" id="TopicIdentifier">
+<a class="viewcode-back" href="../../polarlib.html#polarlib.topic_identifier.TopicIdentifier">[docs]</a>
+<span class="k">class</span> <span class="nc">TopicIdentifier</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">hyphen_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(?=\S+[-])([a-zA-Z-]+)&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span>                 <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_path_list</span>      <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">english_stopwords</span>          <span class="o">=</span> <span class="n">stopwords</span><span class="o">.</span><span class="n">words</span><span class="p">(</span><span class="s1">&#39;english&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clean_noun_phrase_list</span>     <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoded_noun_phrase_list</span>   <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_embedding_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">SentenceTransformer</span><span class="p">(</span><span class="s1">&#39;all-mpnet-base-v2&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">folders</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;noun_phrases&#39;</span><span class="p">)):</span>
+
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_path_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_path_list</span><span class="p">):</span>
+
+            <span class="n">noun_phrase_entry</span> <span class="o">=</span> <span class="n">load_article</span><span class="p">(</span><span class="n">path</span><span class="p">)[</span><span class="s1">&#39;noun_phrases&#39;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">noun_phrase_entry</span><span class="p">:</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">np</span><span class="p">[</span><span class="s1">&#39;ngram&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">np</span> <span class="ow">in</span> <span class="n">entry</span><span class="p">[</span><span class="s1">&#39;noun_phrases&#39;</span><span class="p">]]</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TOKENIZERS_PARALLELISM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;false&#39;</span>
+
+    <span class="k">def</span> <span class="nf">_tokenize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>              <span class="k">return</span> <span class="n">nltk</span><span class="o">.</span><span class="n">word_tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_remove_trailing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>       <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_reduce_white_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39; +&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_to_lower_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>         <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_remove_stopwords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">):</span>    <span class="k">return</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">english_stopwords</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">_remove_digit_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">):</span> <span class="k">return</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">t</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">_remove_punctuation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="n">_text</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hyphen_regex</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span> <span class="k">if</span> <span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span> <span class="k">else</span> <span class="s1">&#39; &#39;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">t</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hyphen_parts</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+                <span class="n">hyphen_parts</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_remove_punctuation</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">hyphen_parts</span><span class="p">]</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">hyphen_parts</span><span class="p">)</span>
+
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">_text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_text</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_lemmatize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">np</span><span class="p">):</span>
+        <span class="n">blob</span>          <span class="o">=</span> <span class="n">TextBlob</span><span class="p">(</span><span class="n">np</span><span class="p">)</span>
+        <span class="n">tag_dict</span>      <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;J&quot;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">:</span> <span class="s1">&#39;n&#39;</span><span class="p">,</span> <span class="s2">&quot;V&quot;</span><span class="p">:</span> <span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">:</span> <span class="s1">&#39;r&#39;</span><span class="p">}</span>
+        <span class="n">word_tag_list</span> <span class="o">=</span> <span class="p">[(</span><span class="n">w</span><span class="p">,</span> <span class="n">tag_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;n&#39;</span><span class="p">))</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">blob</span><span class="o">.</span><span class="n">tags</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">w</span><span class="o">.</span><span class="n">lemmatize</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">word_tag_list</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_pipeline_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">func_list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">func_list</span><span class="p">:</span> <span class="n">text</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">text</span>
+
+<div class="viewcode-block" id="TopicIdentifier.encode_noun_phrases">
+<a class="viewcode-back" href="../../polarlib.html#polarlib.topic_identifier.TopicIdentifier.encode_noun_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">encode_noun_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">clean_noun_phrase_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline_func</span><span class="p">(</span><span class="n">np</span><span class="p">,</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_lemmatize</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_to_lower_case</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_remove_punctuation</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_remove_trailing</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reduce_white_space</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_tokenize</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_remove_digit_tokens</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_remove_stopwords</span><span class="p">,</span>
+                <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="p">])</span> <span class="k">for</span> <span class="n">np</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_list</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoded_noun_phrase_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clean_noun_phrase_list</span><span class="p">,</span>
+            <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cuda&#39;</span><span class="p">,</span>
+            <span class="n">show_progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">np</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_list</span><span class="p">):</span>  <span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_embedding_dict</span><span class="p">[</span><span class="n">np</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoded_noun_phrase_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="TopicIdentifier.noun_phrase_clustering">
+<a class="viewcode-back" href="../../polarlib.html#polarlib.topic_identifier.TopicIdentifier.noun_phrase_clustering">[docs]</a>
+    <span class="k">def</span> <span class="nf">noun_phrase_clustering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk_size</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">,</span> <span class="n">threshold</span>  <span class="o">=</span> <span class="mf">0.80</span><span class="p">):</span>
+
+        <span class="k">def</span> <span class="nf">get_ids</span><span class="p">(</span><span class="n">cluster</span><span class="p">):</span>                            <span class="k">return</span> <span class="p">[</span><span class="n">transaction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">]</span>
+        <span class="k">def</span> <span class="nf">get_embeddings</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">embeddings</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">])</span>
+        <span class="k">def</span> <span class="nf">get_clusters_ids</span><span class="p">(</span><span class="n">clusters</span><span class="p">):</span>                  <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">def</span> <span class="nf">sort_clusters</span><span class="p">(</span><span class="n">clusters</span><span class="p">):</span>                     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">def</span> <span class="nf">sort_cluster</span><span class="p">(</span><span class="n">cluster</span><span class="p">):</span>                       <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">cluster</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="k">def</span> <span class="nf">filter_clusters</span><span class="p">(</span><span class="n">clusters</span><span class="p">,</span> <span class="n">min_cluster_size</span><span class="p">):</span> <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">clusters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">min_cluster_size</span><span class="p">}</span>
+        <span class="k">def</span> <span class="nf">unique</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>                          <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">collection</span><span class="p">))</span>
+        <span class="k">def</span> <span class="nf">get_ids</span><span class="p">(</span><span class="n">cluster</span><span class="p">):</span>                            <span class="k">return</span> <span class="p">[</span><span class="n">transaction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">cos_sim</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Computes the cosine similarity cos_sim(a[i], b[j]) for all i and j.</span>
+<span class="sd">            :return: Matrix with res[i][j]  = cos_sim(a[i], b[j])</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span> <span class="n">a</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span> <span class="n">b</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>               <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>               <span class="n">b</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="n">a_norm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">b_norm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">a_norm</span><span class="p">,</span> <span class="n">b_norm</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">reorder_and_filter_cluster</span><span class="p">(</span><span class="n">cluster_idx</span><span class="p">,</span> <span class="n">cluster</span><span class="p">,</span> <span class="n">cluster_embeddings</span><span class="p">,</span> <span class="n">cluster_head_embedding</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+            <span class="n">cos_scores</span> <span class="o">=</span> <span class="n">cos_sim</span><span class="p">(</span><span class="n">cluster_head_embedding</span><span class="p">,</span> <span class="n">cluster_embeddings</span><span class="p">)</span>
+            <span class="n">sorted_vals</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">cos_scores</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">bigger_than_threshold</span> <span class="o">=</span> <span class="n">sorted_vals</span> <span class="o">&gt;</span> <span class="n">threshold</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="n">bigger_than_threshold</span><span class="p">]</span>
+            <span class="n">sorted_vals</span> <span class="o">=</span> <span class="n">sorted_vals</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="p">[(</span><span class="n">cluster</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">sorted_vals</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">reorder_and_filter_clusters</span><span class="p">(</span><span class="n">clusters</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">parallel</span><span class="p">):</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">parallel</span><span class="p">(</span>
+                <span class="n">delayed</span><span class="p">(</span><span class="n">reorder_and_filter_cluster</span><span class="p">)(</span>
+                    <span class="n">cluster_idx</span><span class="p">,</span>
+                    <span class="n">cluster</span><span class="p">,</span>
+                    <span class="n">get_embeddings</span><span class="p">(</span><span class="n">get_ids</span><span class="p">(</span><span class="n">cluster</span><span class="p">),</span> <span class="n">embeddings</span><span class="p">),</span>
+                    <span class="n">get_embeddings</span><span class="p">([</span><span class="n">cluster_idx</span><span class="p">],</span> <span class="n">embeddings</span><span class="p">),</span>
+                    <span class="n">threshold</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">results</span><span class="p">}</span>
+
+        <span class="k">def</span> <span class="nf">get_clustured_ids</span><span class="p">(</span><span class="n">clusters</span><span class="p">):</span>
+            <span class="n">clustered_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">transaction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">clusters</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">])</span>
+            <span class="n">clustered_ids</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+            <span class="k">return</span> <span class="n">clustered_ids</span>
+
+        <span class="k">def</span> <span class="nf">get_unclustured_ids</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">clusters</span><span class="p">):</span>
+            <span class="n">clustered_ids</span> <span class="o">=</span> <span class="n">get_clustured_ids</span><span class="p">(</span><span class="n">clusters</span><span class="p">)</span>
+            <span class="n">unclustered_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> <span class="o">-</span> <span class="n">clustered_ids</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">unclustered_ids</span>
+
+        <span class="k">def</span> <span class="nf">unique_txs</span><span class="p">(</span><span class="n">collection</span><span class="p">):</span>
+            <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">collection</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">seen</span> <span class="ow">or</span> <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))]</span>
+
+        <span class="k">def</span> <span class="nf">write_pickle</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">load_pickle</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">chunk</span><span class="p">(</span><span class="n">txs</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">):</span>
+
+            <span class="n">n</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">txs</span><span class="p">)</span> <span class="o">/</span> <span class="n">chunk_size</span><span class="p">)</span>
+            <span class="n">k</span><span class="p">,</span> <span class="n">m</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">txs</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="p">(</span><span class="n">txs</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">):</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">m</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">online_community_detection</span><span class="p">(</span>
+                <span class="n">ids</span><span class="p">,</span>
+                <span class="n">embeddings</span><span class="p">,</span>
+                <span class="n">clusters</span>         <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">threshold</span>        <span class="o">=</span> <span class="mf">0.7</span><span class="p">,</span>
+                <span class="n">min_cluster_size</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+                <span class="n">chunk_size</span>       <span class="o">=</span> <span class="mi">2500</span><span class="p">,</span>
+                <span class="n">iterations</span>       <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+                <span class="n">cores</span>            <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">verbose</span>          <span class="o">=</span> <span class="kc">False</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">clusters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">clusters</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">with</span> <span class="n">Parallel</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="n">cores</span><span class="p">)</span> <span class="k">as</span> <span class="n">parallel</span><span class="p">:</span>
+
+                <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;1. Nearest cluster&quot;</span><span class="p">)</span>
+                    <span class="n">unclustered_ids</span> <span class="o">=</span> <span class="n">get_unclustured_ids</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">clusters</span><span class="p">)</span>
+                    <span class="n">cluster_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unclustured&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Clusters&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_ids</span><span class="p">))</span>
+
+                    <span class="n">clusters</span> <span class="o">=</span> <span class="n">nearest_cluster</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
+                                               <span class="n">parallel</span><span class="o">=</span><span class="n">parallel</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;2. Create new clusters&quot;</span><span class="p">)</span>
+
+                    <span class="n">unclustered_ids</span> <span class="o">=</span> <span class="n">get_unclustured_ids</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">clusters</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unclustured&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">))</span>
+                    <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">create_clusters</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="p">{},</span> <span class="n">min_cluster_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                                                   <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="n">parallel</span><span class="p">)</span>
+                    <span class="n">new_cluster_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;3. Merge new clusters&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_cluster_ids</span><span class="p">))</span>
+
+                    <span class="n">max_clusters_size</span> <span class="o">=</span> <span class="mi">25000</span>
+                    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                        <span class="n">new_cluster_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                        <span class="n">old_new_cluster_ids</span> <span class="o">=</span> <span class="n">new_cluster_ids</span>
+                        <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">create_clusters</span><span class="p">(</span><span class="n">new_cluster_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">new_clusters</span><span class="p">,</span> <span class="n">min_cluster_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                                       <span class="n">chunk_size</span><span class="o">=</span><span class="n">max_clusters_size</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">,</span>
+                                                       <span class="n">parallel</span><span class="o">=</span><span class="n">parallel</span><span class="p">)</span>
+                        <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">filter_clusters</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                        <span class="n">new_cluster_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">new_clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+                        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;New merged clusters&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_cluster_ids</span><span class="p">))</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_new_cluster_ids</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_clusters_size</span><span class="p">:</span> <span class="k">break</span>
+
+                    <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">filter_clusters</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">,</span> <span class="n">min_cluster_size</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;New clusters with min community size &gt;= </span><span class="si">{</span><span class="n">min_cluster_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">))</span>
+
+                    <span class="n">clusters</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">new_clusters</span><span class="p">,</span> <span class="o">**</span><span class="n">clusters</span><span class="p">}</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total clusters&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">clusters</span><span class="p">))</span>
+                    <span class="n">clusters</span> <span class="o">=</span> <span class="n">sort_clusters</span><span class="p">(</span><span class="n">clusters</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;4. Nearest cluster&quot;</span><span class="p">)</span>
+
+                    <span class="n">unclustered_ids</span> <span class="o">=</span> <span class="n">get_unclustured_ids</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">clusters</span><span class="p">)</span>
+                    <span class="n">cluster_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unclustured&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">))</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Clusters&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_ids</span><span class="p">))</span>
+
+                    <span class="n">clusters</span> <span class="o">=</span> <span class="n">nearest_cluster</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">clusters</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
+                                               <span class="n">parallel</span><span class="o">=</span><span class="n">parallel</span><span class="p">)</span>
+                    <span class="n">clusters</span> <span class="o">=</span> <span class="n">sort_clusters</span><span class="p">(</span><span class="n">clusters</span><span class="p">)</span>
+
+                    <span class="n">unclustered_ids</span> <span class="o">=</span> <span class="n">get_unclustured_ids</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">clusters</span><span class="p">)</span>
+                    <span class="n">clustured_ids</span> <span class="o">=</span> <span class="n">get_clustured_ids</span><span class="p">(</span><span class="n">clusters</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Clustured&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">clustured_ids</span><span class="p">))</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unclustured&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">))</span>
+                        <span class="nb">print</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Percentage clustured </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">clustured_ids</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">clustured_ids</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">unclustered_ids</span><span class="p">))</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">clusters</span>
+
+        <span class="k">def</span> <span class="nf">nearest_cluster_chunk</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">chunk_embeddings</span><span class="p">,</span> <span class="n">cluster_ids</span><span class="p">,</span> <span class="n">cluster_embeddings</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+            <span class="n">cos_scores</span> <span class="o">=</span> <span class="n">cos_sim</span><span class="p">(</span><span class="n">chunk_embeddings</span><span class="p">,</span> <span class="n">cluster_embeddings</span><span class="p">)</span>
+            <span class="n">top_val_large</span><span class="p">,</span> <span class="n">top_idx_large</span> <span class="o">=</span> <span class="n">cos_scores</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">largest</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">top_idx_large</span> <span class="o">=</span> <span class="n">top_idx_large</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">top_val_large</span> <span class="o">=</span> <span class="n">top_val_large</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">cluster_assignment</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">score</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">top_val_large</span><span class="p">,</span> <span class="n">top_idx_large</span><span class="p">)):</span>
+                <span class="n">cluster_id</span> <span class="o">=</span> <span class="n">cluster_ids</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">score</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span> <span class="n">cluster_id</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">cluster_assignment</span><span class="o">.</span><span class="n">append</span><span class="p">(((</span><span class="n">chunk_ids</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">score</span><span class="p">),</span> <span class="n">cluster_id</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">cluster_assignment</span>
+
+        <span class="k">def</span> <span class="nf">nearest_cluster</span><span class="p">(</span><span class="n">transaction_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">2500</span><span class="p">):</span>
+            <span class="n">cluster_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_ids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">clusters</span>
+
+            <span class="n">cluster_embeddings</span> <span class="o">=</span> <span class="n">get_embeddings</span><span class="p">(</span><span class="n">cluster_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chunk</span><span class="p">(</span><span class="n">transaction_ids</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">transaction_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[]</span>
+
+            <span class="k">with</span> <span class="n">log_durations</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">,</span> <span class="s2">&quot;Parallel jobs nearest cluster&quot;</span><span class="p">):</span>
+
+                <span class="n">out</span> <span class="o">=</span> <span class="n">parallel</span><span class="p">(</span>
+                    <span class="n">delayed</span><span class="p">(</span><span class="n">nearest_cluster_chunk</span><span class="p">)(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">get_embeddings</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">),</span> <span class="n">cluster_ids</span><span class="p">,</span>
+                                                   <span class="n">cluster_embeddings</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">chunk_ids</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="n">cluster_assignment</span> <span class="o">=</span> <span class="p">[</span><span class="n">assignment</span> <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">out</span> <span class="k">for</span> <span class="n">assignment</span> <span class="ow">in</span> <span class="n">sublist</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="p">(</span><span class="n">transaction_id</span><span class="p">,</span> <span class="n">similarity</span><span class="p">),</span> <span class="n">cluster_id</span> <span class="ow">in</span> <span class="n">cluster_assignment</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cluster_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="k">continue</span>
+                <span class="n">clusters</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">transaction_id</span><span class="p">,</span> <span class="n">similarity</span><span class="p">))</span>
+
+            <span class="n">clusters</span> <span class="o">=</span> <span class="p">{</span><span class="n">cluster_id</span><span class="p">:</span> <span class="n">unique_txs</span><span class="p">(</span><span class="n">sort_cluster</span><span class="p">(</span><span class="n">cluster</span><span class="p">))</span> <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">clusters</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+            <span class="k">return</span> <span class="n">clusters</span>
+
+        <span class="k">def</span> <span class="nf">create_clusters</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">clusters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_cluster_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">2500</span><span class="p">):</span>
+            <span class="n">to_cluster_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">to_cluster_ids</span><span class="p">)</span>
+
+            <span class="n">c</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chunk</span><span class="p">(</span><span class="n">to_cluster_ids</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">to_cluster_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[]</span>
+
+            <span class="k">with</span> <span class="n">log_durations</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">,</span> <span class="s2">&quot;Parallel jobs create clusters&quot;</span><span class="p">):</span>
+                <span class="n">out</span> <span class="o">=</span> <span class="n">parallel</span><span class="p">(</span>
+                    <span class="n">delayed</span><span class="p">(</span><span class="n">fast_clustering</span><span class="p">)(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">get_embeddings</span><span class="p">(</span><span class="n">chunk_ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">),</span> <span class="n">threshold</span><span class="p">,</span>
+                                             <span class="n">min_cluster_size</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">chunk_ids</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="n">new_clusters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">out_clusters</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">out_clusters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span> <span class="n">new_clusters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_txs</span><span class="p">(</span>
+                    <span class="n">cluster</span> <span class="o">+</span> <span class="n">new_clusters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="p">[]))</span>
+
+            <span class="k">for</span> <span class="n">cluster_idx</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">new_clusters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">community_extended</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">similarity</span><span class="p">)</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">:</span> <span class="n">community_extended</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">idx</span><span class="p">,</span> <span class="n">similarity</span><span class="p">)]</span> <span class="o">+</span> <span class="n">clusters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="p">[])</span>
+                <span class="n">new_clusters</span><span class="p">[</span><span class="n">cluster_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_txs</span><span class="p">(</span><span class="n">community_extended</span><span class="p">)</span>
+
+            <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">reorder_and_filter_clusters</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">parallel</span><span class="p">)</span>
+            <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">sort_clusters</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">)</span>
+
+            <span class="n">clustered_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">cluster_ids</span> <span class="ow">in</span> <span class="n">new_clusters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">filtered</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cluster_ids</span><span class="p">)</span> <span class="o">-</span> <span class="n">clustered_ids</span>
+                <span class="n">cluster_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">cluster_idx</span> <span class="k">for</span> <span class="n">cluster_idx</span> <span class="ow">in</span> <span class="n">cluster_ids</span> <span class="k">if</span> <span class="n">cluster_idx</span> <span class="ow">in</span> <span class="n">filtered</span><span class="p">]</span>
+                <span class="n">new_clusters</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_ids</span>
+                <span class="n">clustered_ids</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cluster_ids</span><span class="p">)</span>
+
+            <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">filter_clusters</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">,</span> <span class="n">min_cluster_size</span><span class="p">)</span>
+            <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">sort_clusters</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_clusters</span>
+
+        <span class="k">def</span> <span class="nf">fast_clustering</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.70</span><span class="p">,</span> <span class="n">min_cluster_size</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Function for Fast Clustering.</span>
+<span class="sd">            Finds in the embeddings all communities, i.e. embeddings that are close (closer than threshold).</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">cos_scores</span> <span class="o">=</span> <span class="n">cos_sim</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">)</span>
+
+            <span class="c1">############################################</span>
+            <span class="c1"># Step 1) Create clusters where similarity #</span>
+            <span class="c1"># is bigger than threshold                 #</span>
+            <span class="c1">############################################</span>
+
+            <span class="n">bigger_than_threshold</span> <span class="o">=</span> <span class="n">cos_scores</span> <span class="o">&gt;=</span> <span class="n">threshold</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">bigger_than_threshold</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+            <span class="n">cos_scores</span> <span class="o">=</span> <span class="n">cos_scores</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+            <span class="n">extracted_clusters</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[])</span>
+            <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">indices</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span> <span class="n">extracted_clusters</span><span class="p">[</span><span class="n">ids</span><span class="p">[</span><span class="n">row</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ids</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">cos_scores</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]))</span>
+
+            <span class="n">extracted_clusters</span> <span class="o">=</span> <span class="n">sort_clusters</span><span class="p">(</span><span class="n">extracted_clusters</span><span class="p">)</span>
+
+            <span class="c1">#######################################</span>
+            <span class="c1"># Step 2) Remove overlapping clusters #</span>
+            <span class="c1">#######################################</span>
+
+            <span class="n">unique_clusters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">extracted_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">extracted_clusters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">add_cluster</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">for</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">transaction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">extracted_ids</span><span class="p">:</span>
+                        <span class="n">add_cluster</span> <span class="o">=</span> <span class="kc">False</span>
+                        <span class="k">break</span>
+
+                <span class="k">if</span> <span class="n">add_cluster</span><span class="p">:</span>
+                    <span class="n">unique_clusters</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster</span>
+                    <span class="k">for</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">:</span>
+                        <span class="n">extracted_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">transaction</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="n">new_clusters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">cluster_id</span><span class="p">,</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">unique_clusters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">community_extended</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">:</span> <span class="n">community_extended</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                <span class="n">new_clusters</span><span class="p">[</span><span class="n">cluster_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_txs</span><span class="p">(</span><span class="n">community_extended</span><span class="p">)</span>
+
+            <span class="n">new_clusters</span> <span class="o">=</span> <span class="n">filter_clusters</span><span class="p">(</span><span class="n">new_clusters</span><span class="p">,</span> <span class="n">min_cluster_size</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">new_clusters</span>
+
+        <span class="n">_noun_phrase_embedding_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_embedding_dict</span><span class="p">[</span><span class="n">np</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">np</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_list</span><span class="p">)}</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;=&gt;&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">_noun_phrase_embedding_dict</span><span class="p">))</span>
+
+        <span class="n">clusters</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">clusters</span> <span class="o">=</span> <span class="n">online_community_detection</span><span class="p">(</span>
+            <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_list</span><span class="p">)),</span>
+            <span class="n">_noun_phrase_embedding_dict</span><span class="p">,</span>
+            <span class="n">clusters</span><span class="p">,</span>
+            <span class="n">chunk_size</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">,</span>
+            <span class="n">threshold</span>  <span class="o">=</span> <span class="mf">0.80</span>
+        <span class="p">)</span>
+
+        <span class="n">topical_clusters</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="sa">f</span><span class="s2">&quot;t</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;noun_phrases&quot;</span><span class="p">:</span>      <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">noun_phrase_list</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">v</span><span class="p">],</span>
+                <span class="s2">&quot;pre_processed&quot;</span><span class="p">:</span>     <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">clean_noun_phrase_list</span><span class="p">[</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">v</span><span class="p">],</span>
+                <span class="s2">&quot;similarity_scores&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">v</span><span class="p">],</span>
+            <span class="p">}</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">clusters</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
+        <span class="p">}</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;topics.json&#39;</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">topical_clusters</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+</div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;python -m textblob.download_corpora&quot;&quot;&quot;</span>
+
+    <span class="n">topic_identifier</span> <span class="o">=</span> <span class="n">TopicIdentifier</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;../example&quot;</span><span class="p">)</span>
+    <span class="n">topic_identifier</span><span class="o">.</span><span class="n">encode_noun_phrases</span><span class="p">()</span>
+    <span class="n">topic_identifier</span><span class="o">.</span><span class="n">noun_phrase_clustering</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Demetris Paschalides.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

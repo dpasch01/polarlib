@@ -1,6 +1,6 @@
 import os, spacy, itertools, requests, time, string, spotlight, nltk, multiprocessing
 
-from .utilities import *
+from .miscellaneous import *
 
 from tqdm import tqdm
 from nltk import ngrams

@@ -1,7 +1,7 @@
 import os, pickle, networkx as nx, math, itertools, pandas as pd, json, scipy.stats, jsonpickle, numpy, networkx as nx, subprocess, multiprocessing
 
 from tqdm import tqdm
-from .utilities import *
+from .miscellaneous import *
 from .frustration import *
 from functools import partial
 

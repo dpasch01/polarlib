@@ -7,7 +7,7 @@ from torch import Tensor
 import pickle5 as pickle
 
 from tqdm import tqdm
-from .utilities import *
+from .miscellaneous import *
 
 from nltk.corpus import stopwords
 from textblob import TextBlob, Word
