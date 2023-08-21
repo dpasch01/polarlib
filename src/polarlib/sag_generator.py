@@ -5,11 +5,14 @@ from collections import Counter
 from multiprocessing import Pool
 from tqdm import tqdm
 
-
 class SAGGenerator:
 
     def __init__(self, output_dir):
+        """
+        Initialize the SAGGenerator.
 
+        :param output_dir: The output directory where generated files will be stored.
+        """
         self.attitude_path_list           = []
         self.output_dir                   = output_dir
         self.pair_sentiment_attitude_dict = {}
@@ -22,13 +25,20 @@ class SAGGenerator:
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
     def _read_sentiment_attitudes(self, path):
+        """
+        Read sentiment attitudes from a given path.
 
+        :param path: The path to the sentiment attitude file.
+        :return: The entity attitudes from the sentiment attitude file.
+        """
         with open(path, 'rb') as f: attidute_object = pickle.load(f)
 
         return attidute_object['entity_attitudes']
 
     def load_sentiment_attitudes(self):
-
+        """
+        Load sentiment attitudes from multiple files in parallel and update the pair_sentiment_attitude_dict.
+        """
         pool = Pool(multiprocessing.cpu_count() - 4)
 
         for result in tqdm(
@@ -49,7 +59,12 @@ class SAGGenerator:
         pool.join()
 
     def calculate_attitude_buckets(self, verbose=False):
+        """
+        Calculate attitude buckets based on sentiment attitudes.
 
+        :param verbose: If True, print additional statistics.
+        :return: A list of attitude buckets.
+        """
         attitude_population_list = list(itertools.chain.from_iterable([list(v) for v in self.pair_sentiment_attitude_dict.values()]))
 
         if verbose:
@@ -76,6 +91,13 @@ class SAGGenerator:
         return self.bins
 
     def convert_attitude_signs(self, bin_category_mapping, minimum_frequency=5, verbose=False):
+        """
+        Convert sentiment attitudes to attitude signs based on bin category mapping.
+
+        :param bin_category_mapping: A dictionary that maps bin categories to their respective bins.
+        :param minimum_frequency: Minimum frequency threshold for pairs to be included.
+        :param verbose: If True, print additional information.
+        """
 
         """
         bin_category_mapping = {
@@ -122,7 +144,11 @@ class SAGGenerator:
                 print('{0:20} {1}'.format(l, f))
 
     def construct_sag(self):
+        """
+        Construct a Signed Attitude Graph (SAG) based on sentiment attitudes.
 
+        :return: The constructed SAG, node mappings, and edge weights.
+        """
         pair_frequency_dict                  = {k: len(v) for k, v in self.pair_sentiment_attitude_dict.items()}
         G, node_id, node_to_int, int_to_node = nx.Graph(), 0, {}, {}
 

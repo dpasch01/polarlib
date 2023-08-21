@@ -1,6 +1,20 @@
 import networkx as nx, numpy as np, time
 
 def G_to_fi(G):
+
+    """
+    Convert a signed network graph to frustration index related data.
+
+    Parameters:
+    - G (networkx.Graph): Input graph.
+
+    Returns:
+    - sign_G (networkx.Graph): A graph with nodes and edges representing positive and negative edges.
+    - adj_sign_G (numpy.matrix): Adjacency matrix of the sign_G graph.
+    - sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.
+    - id_to_node (dict): Mapping of node indices to their original names.
+    """
+
     nodelist = G.nodes()
     edgelist = G.edges(data=True)
     
@@ -29,6 +43,21 @@ from gurobipy import *
 import multiprocessing
 
 def calculate_frustration_index(sign_G, sign_matrix, sign_edgelist):
+    """
+    Calculate the frustration index of a signed network graph.
+
+    Parameters:
+    - sign_G (networkx.Graph): Graph with positive and negative edges.
+    - sign_matrix (numpy.matrix): Matrix representing edge signs.
+    - sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.
+
+    Returns:
+    - f_g (float): Frustration index value.
+    - rounded_obj_value (float): Rounded objective value.
+    - solve_time (float): Time taken to solve the optimization model.
+    - optimal_solution (dict): Optimal variable values.
+    """
+
     order = len(sign_matrix)
     number_of_negative = ((-1 == sign_matrix)).sum()/2
     size = int(np.count_nonzero(sign_matrix)/2)
@@ -111,7 +140,16 @@ def calculate_frustration_index(sign_G, sign_matrix, sign_edgelist):
     return f_g, np.around(obj.getValue()), solve_time, optimal_solution
 
 def triadic_balance(G, triad):
-    
+    """
+    Calculate the triadic balance of a triad in a signed network graph.
+
+    Parameters:
+    - G (networkx.Graph): Graph containing the triad.
+    - triad (tuple): Tuple containing nodes of the triad.
+
+    Returns:
+    - balance_str (str): String representing the triadic balance (+ and - signs).
+    """
     plus_str, minus_str = "", ""
     for c in itertools.combinations(triad, 2):
         if G.get_edge_data(c[0], c[1])['weight'] < 0.0: minus_str += '-'
@@ -120,6 +158,15 @@ def triadic_balance(G, triad):
     return plus_str + minus_str
 
 def calc_triadic_balance(G):
+    """
+    Calculate the distribution of triadic balances in a signed network graph.
+
+    Parameters:
+    - G (networkx.Graph): Input graph.
+
+    Returns:
+    - gtb_dict (dict): Dictionary containing the distribution of triadic balances.
+    """
     gtb_dict = {
         '+++': 0,
         '+--': 0,

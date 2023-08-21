@@ -16,7 +16,12 @@ from sentence_transformers import SentenceTransformer, util
 class TopicIdentifier:
 
     def __init__(self, output_dir):
+        """
+        Initialize the TopicIdentifier object.
 
+        Parameters:
+            output_dir (str): The output directory where the results will be saved.
+        """
         self.hyphen_regex = r'(?=\S+[-])([a-zA-Z-]+)'
 
         self.output_dir                 = output_dir
@@ -104,6 +109,13 @@ class TopicIdentifier:
         for i, np in enumerate(self.noun_phrase_list):  self.noun_phrase_embedding_dict[np] = self.encoded_noun_phrase_list[i]
 
     def noun_phrase_clustering(self, chunk_size = 5000, threshold  = 0.80):
+        """
+        Perform noun phrase clustering using community detection.
+
+        Parameters:
+            chunk_size (int, optional): Size of data chunks for processing. Default is 5000.
+            threshold (float, optional): Similarity threshold for clustering. Default is 0.80.
+        """
 
         def get_ids(cluster):                            return [transaction[0] for transaction in cluster]
         def get_embeddings(ids, embeddings):             return np.array([embeddings[idx] for idx in ids])

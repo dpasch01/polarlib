@@ -1,6 +1,6 @@
 import os, itertools, pandas as pd, pickle
 
-from utilities import *
+from .utilities import *
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TextClassificationPipeline
 
 from tqdm import tqdm
@@ -14,6 +14,27 @@ disable_progress_bar()
 
 class SentimentAttitudePipeline:
 
+    """
+    Pipeline for sentiment and attitude analysis using a trained model.
+
+    Args:
+        output_dir (str): The output directory for storing results.
+        model (AutoModelForSequenceClassification): The pre-trained model for sentiment classification.
+        tokenizer (AutoModelForSequenceClassification): The tokenizer associated with the model.
+        training_args (TrainingArguments): Arguments for training the model.
+
+    Attributes:
+        output_dir (str): The output directory for storing results.
+        model (AutoModelForSequenceClassification): The pre-trained model for sentiment classification.
+        tokenizer (AutoModelForSequenceClassification): The tokenizer associated with the model.
+        label_to_int (dict): Mapping of sentiment labels to integer values.
+        int_to_label (dict): Mapping of integer values to sentiment labels.
+        training_args (TrainingArguments): Arguments for training the model.
+        trainer (Trainer): Trainer object for model evaluation.
+        model_pipeline (TextClassificationPipeline): Text classification pipeline for inference.
+        noun_phrase_path_list (list): List of paths to noun phrase files.
+    """
+
     def __init__(
             self,
             output_dir,
@@ -21,7 +42,9 @@ class SentimentAttitudePipeline:
             tokenizer: AutoModelForSequenceClassification,
             training_args: TrainingArguments
     ):
-
+        """
+        Initialize the SentimentAttitudePipeline.
+        """
         self.output_dir   = output_dir
         self.model        = model
         self.tokenizer    = tokenizer
@@ -56,10 +79,28 @@ class SentimentAttitudePipeline:
 
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-    def tokenize(self, batch):  return self.tokenizer(batch["text"], padding=True, truncation=True, max_length=512)
+    def tokenize(self, batch):
+        """
+        Tokenize a batch of text data.
+
+        Args:
+            batch (dict): Batch of input data containing "text" field.
+
+        Returns:
+            dict: Tokenized batch.
+        """
+        return self.tokenizer(batch["text"], padding=True, truncation=True, max_length=512)
 
     def get_raw_attitude(self, anonymized):
+        """
+        Get raw attitude predictions for an anonymized sentence.
 
+        Args:
+            anonymized (str): Anonymized input sentence.
+
+        Returns:
+            list: List of attitude predictions.
+        """
         r = self.model_pipeline(
             anonymized,
             truncation=True,
@@ -76,7 +117,15 @@ class SentimentAttitudePipeline:
         return r
 
     def attitude_inference(self, entity_sentence_list):
+        """
+        Perform attitude inference for a list of entity-sentence pairs.
 
+        Args:
+            entity_sentence_list (list): List of entity-sentence pairs.
+
+        Returns:
+            dict: Dictionary containing attitude predictions.
+        """
         entity_sentence_list = [t for t in entity_sentence_list if len(t['sentence'].strip()) > 5]
 
         if len(entity_sentence_list) == 0: return {}
@@ -119,7 +168,15 @@ class SentimentAttitudePipeline:
         return attitude_dict
 
     def extract_sentiment_attitude(self, path):
+        """
+        Extract sentiment and attitude information from a given file.
 
+        Args:
+            path (str): Path to the input file.
+
+        Returns:
+            bool: True if extraction is successful, False otherwise.
+        """
         entity_sentence_list      = []
         noun_phrase_sentence_list = []
 
@@ -219,7 +276,9 @@ class SentimentAttitudePipeline:
         return True
 
     def calculate_sentiment_attitudes(self):
-
+        """
+        Calculate sentiment attitudes for a list of noun phrase paths.
+        """
         sentence_list = []
 
         for path in self.noun_phrase_path_list:
@@ -231,6 +290,16 @@ class SentimentAttitudePipeline:
         for i, path in enumerate(tqdm(self.noun_phrase_path_list)): self.extract_sentiment_attitude(path)
 
     def _replace_entity_indices(self, sentence, entities):
+        """
+        Replace entity indices in a sentence with special tokens.
+
+        Args:
+            sentence (str): Original sentence.
+            entities (list): List of entity information.
+
+        Returns:
+            str: Sentence with replaced entity indices.
+        """
         sorted_entities = sorted(entities, key=lambda x: x[1], reverse=True)
         reconstructed_sentence = list(sentence)
 

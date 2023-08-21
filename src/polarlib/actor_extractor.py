@@ -15,9 +15,24 @@ from spotlight import SpotlightException
 from mosestokenizer import MosesTokenizer, MosesDetokenizer
 
 class EntityExtractor:
+    """
+    A class for extracting entities from articles and querying DBpedia for entity information.
+
+    Args:
+        output_dir (str): The directory where the output data will be stored.
+
+    Attributes:
+        output_dir (str): The output directory for storing extracted entity data.
+        article_paths (list): List of article file paths obtained from the 'pre_processed' folder.
+    """
 
     def __init__(self, output_dir):
+        """
+        Initialize the EntityExtractor.
 
+        Args:
+            output_dir (str): The directory where the output data will be stored.
+        """
         self.output_dir      = output_dir
 
         self.article_paths   = list(itertools.chain.from_iterable([
@@ -28,7 +43,17 @@ class EntityExtractor:
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
     def query_dbpedia_entities(self, text, confidence=0.45, spotlight_url='http://127.0.0.1:2222/rest/annotate'):
+        """
+        Query DBpedia Spotlight for entities in the given text.
 
+        Args:
+            text (str): The input text to query for entities.
+            confidence (float, optional): Confidence threshold for entity extraction. Defaults to 0.45.
+            spotlight_url (str, optional): URL of the DBpedia Spotlight service. Defaults to 'http://127.0.0.1:2222/rest/annotate'.
+
+        Returns:
+            list: A list of dictionaries representing extracted entities.
+        """
         req_data      = {'lang': 'en', 'text': str(text), 'confidence': confidence, 'types': ['']}
         spot_entities = requests.post(spotlight_url, data=req_data, headers={"Accept": "application/json"})
 
@@ -54,6 +79,15 @@ class EntityExtractor:
         time.sleep(0.250)
 
     def extract_article_entities(self, path):
+        """
+        Extract entities from a single article.
+
+        Args:
+            path (str): The path to the article file.
+
+        Returns:
+            bool or None: Returns True if extraction is successful, None if an exception occurs.
+        """
         try:
 
             article = load_article(path)
@@ -111,7 +145,11 @@ class EntityExtractor:
         return True
 
     def extract_entities(self):
+        """
+        Extract entities from all articles using multiprocessing.
 
+        This method uses multiprocessing to extract entities from multiple articles concurrently.
+        """
         pool = Pool(multiprocessing.cpu_count() - 8)
 
         for i in tqdm(
@@ -124,6 +162,9 @@ class EntityExtractor:
         pool.join()
 
 class NounPhraseExtractor:
+    """
+    A class for extracting noun phrases from articles.
+    """
 
     nltk.download('brown')
     nltk.download('punkt')
@@ -131,7 +172,12 @@ class NounPhraseExtractor:
     nltk.download('stopwords')
 
     def __init__(self, output_dir, spacy_model_str="en_core_web_sm"):
+        """
+        Initialize the NounPhraseExtractor.
 
+        :param output_dir: The directory to output the results.
+        :param spacy_model_str: The Spacy model to use for sentence parsing.
+        """
         self.entity_paths  = []
         self.output_dir    = output_dir
         self.stopword_list = stopwords.words('english') + ["'s"]
@@ -142,7 +188,12 @@ class NounPhraseExtractor:
             for p in files: self.entity_paths.append(os.path.join(root, p))
 
     def _clean_text(self, text):
+        """
+        Clean and preprocess the given text.
 
+        :param text: The input text.
+        :return: Cleaned and preprocessed text.
+        """
         token_list = word_tokenize(text.lower())
         token_list = [t for t in token_list if not all(c in string.punctuation for c in t)]
         token_list = [t for t in token_list if not t in self.stopword_list]
@@ -151,7 +202,12 @@ class NounPhraseExtractor:
         return ' '.join(token_list)
 
     def extract_article_noun_phrases(self, path):
+        """
+        Extract noun phrases from an article.
 
+        :param path: The path to the article.
+        :return: True if successful, None otherwise.
+        """
         try:
 
             entity_object = load_article(path)
@@ -214,7 +270,9 @@ class NounPhraseExtractor:
         return True
 
     def extract_noun_phrases(self):
-
+        """
+        Extract noun phrases from all articles using multiprocessing.
+        """
         pool = Pool(multiprocessing.cpu_count() - 8)
 
         for i in tqdm(
@@ -227,6 +285,14 @@ class NounPhraseExtractor:
         pool.join()
 
     def _extract_ngrams(self, s, offset=0, n=1):
+        """
+        Extract n-grams from a given sentence.
+
+        :param s: The sentence to extract n-grams from.
+        :param offset: Offset for position indices.
+        :param n: The n-gram size.
+        :return: List of extracted n-grams.
+        """
 
         ms = MosesTokenizer('en')
         md = MosesDetokenizer('en')

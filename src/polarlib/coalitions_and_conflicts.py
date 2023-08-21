@@ -1,12 +1,11 @@
 import os, pickle, networkx as nx, math, itertools, pandas as pd, json, scipy.stats, jsonpickle, numpy, networkx as nx, subprocess, multiprocessing
 
 from tqdm import tqdm
-from utilities import *
-from frustration import *
+from .utilities import *
+from .frustration import *
 from functools import partial
 
 from multiprocessing import Pool
-from ast import literal_eval as make_tuple
 from collections import defaultdict, Counter
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import ward, fcluster
@@ -14,7 +13,33 @@ from scipy.cluster.hierarchy import ward, fcluster
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 class FellowshipExtractor:
+    """
+    A class for extracting fellowships from a signed network using SIMAP algorithm.
 
+    Args:
+        output_dir (str): The directory where output files will be saved.
+
+    Attributes:
+        output_dir (str): The directory where output files will be saved.
+        fellowships (list): List to store extracted fellowships.
+        sag (networkx.Graph): Signed adjacency graph.
+        int_to_node (dict): Mapping of integer node indices to node names.
+        node_to_int (dict): Mapping of node names to integer node indices.
+
+    Raises:
+        InsufficientSignedEdgesException: If there are not enough signed edges in the graph.
+
+    Methods:
+        _decode_fellowship_list(f_list, simap_iteration_dict):
+            Decode fellowship list using the simap_iteration_dict.
+        signed_network_clustering(resolution, verbose, jar_path):
+            Run SIMAP algorithm to perform signed network clustering.
+        extract_fellowships(n_iter, resolution, merge_iter, jar_path, verbose):
+            Extract fellowships using iterations of signed network clustering.
+        _extract_fellowships(n_iter, resolution, merge_iter, jar_path, verbose):
+            Extract and merge fellowships using SIMAP algorithm.
+
+    """
     def __init__(self, output_dir):
 
         self.output_dir = output_dir
@@ -269,9 +294,19 @@ class InsufficientSignedEdgesException(Exception):
         ))
 
 class DipoleGenerator:
+    """
+    A class for generating dipole information from fellowship graphs.
 
+    Parameters:
+        output_dir (str): The directory where the generated output will be stored.
+    """
     def __init__(self, output_dir):
+        """
+        Initialize the DipoleGenerator.
 
+        Args:
+            output_dir (str): The output directory path.
+        """
         self.output_dir = output_dir
         self.dipoles    = []
 
@@ -286,7 +321,12 @@ class DipoleGenerator:
         self.fellowships = fellowship_list
 
     def get_connected_fellowships(self):
+        """
+        Get pairs of connected fellowships.
 
+        Returns:
+            set: Set of tuples representing pairs of connected fellowships.
+        """
         community_membership = {}
         edge_set = set(self.sag.edges())
         connected_community_pairs = set()
@@ -315,7 +355,12 @@ class DipoleGenerator:
         return connected_community_pairs
 
     def get_fellowship_graphs(self):
+        """
+        Get a list of fellowship graphs.
 
+        Returns:
+            list: List of NetworkX graphs representing fellowship graphs.
+        """
         fellowship_graphs = []
 
         for f in self.fellowships:
@@ -331,6 +376,16 @@ class DipoleGenerator:
         return fellowship_graphs
 
     def extract_dipole(self, f_i_j, fellowship_graphs):
+        """
+        Extract dipole information from fellowship graphs.
+
+        Args:
+            f_i_j (tuple): Tuple of two fellowship indices.
+            fellowship_graphs (list): List of fellowship graphs.
+
+        Returns:
+            None or tuple: None if dipole extraction fails, otherwise a tuple containing dipole information.
+        """
 
         f_i, f_j = f_i_j
         int_nodes_1 = [self.node_to_int[n] for n in fellowship_graphs[f_i].nodes()]
@@ -373,7 +428,15 @@ class DipoleGenerator:
         }]
 
     def calculate_frustration(self, d):
+        """
+        Calculate frustration index for a dipole.
 
+        Args:
+            d (tuple): Tuple containing dipole information.
+
+        Returns:
+            tuple: Tuple containing updated dipole information with frustration index.
+        """
         si_sign_G, si_adj_sign_G, si_sign_edgelist, si_int_to_node = G_to_fi(d[1]['d_ij'])
         si_f_g, si_f_e, si_t, si_solution_dict = calculate_frustration_index(si_sign_G, si_adj_sign_G, si_sign_edgelist)
 
@@ -382,12 +445,27 @@ class DipoleGenerator:
         return d
 
     def generate_dipoles(self, f_g_thr=0.7, n_r_thr=0.5):
+        """
+        Generate dipoles based on thresholds and save them to a file.
 
+        Args:
+            f_g_thr (float, optional): Frustration index threshold. Defaults to 0.7.
+            n_r_thr (float, optional): Negative ratio threshold. Defaults to 0.5.
+        """
         self.dipoles = self._generate_dipoles(f_g_thr=f_g_thr, n_r_thr=f_g_thr)
         with open(os.path.join(self.output_dir, 'dipoles.pckl'), 'wb') as f: pickle.dump(self.dipoles, f)
 
     def _generate_dipoles(self, f_g_thr=0.7, n_r_thr=0.5):
+        """
+        Generate dipoles based on thresholds.
 
+        Args:
+            f_g_thr (float, optional): Frustration index threshold. Defaults to 0.7.
+            n_r_thr (float, optional): Negative ratio threshold. Defaults to 0.5.
+
+        Returns:
+            list: List of tuples containing dipole information.
+        """
         f_i_j_list = self.get_connected_fellowships()
 
         fellowship_graphs = self.get_fellowship_graphs()
@@ -419,9 +497,16 @@ class DipoleGenerator:
         return fellowship_dipoles
 
 class TopicAttitudeCalculator:
+    """
+    A class for calculating topic attitudes and polarization indices based on sentiment attitudes and dipole information.
+    """
 
     def __init__(self, output_dir):
+        """
+        Initializes the TopicAttitudeCalculator with the specified output directory.
 
+        :param output_dir: The directory where output data will be saved.
+        """
         self.output_dir = output_dir
 
         with open(os.path.join(self.output_dir, 'polarization/' + 'sag.pckl'), 'rb') as f:         G = pickle.load(f)
@@ -468,6 +553,13 @@ class TopicAttitudeCalculator:
             dipole_tuple,
             aggr_func=numpy.mean
     ):
+        """
+        Undersamples the dipole attitudes by aggregating sentiment attitudes.
+
+        :param dipole_tuple: A tuple containing the dipole information and sentiment attitudes.
+        :param aggr_func: Aggregation function for sentiment attitudes.
+        :return: A list of polarized clusters and their attitude scores.
+        """
         fi, fj      = dipole_tuple[0]
         dipole_dict = dipole_tuple[1]
 
@@ -531,6 +623,13 @@ class TopicAttitudeCalculator:
         return polarization_list
 
     def resample_attitudes(self, atts, n):
+        """
+        Resamples attitudes to achieve a balanced distribution.
+
+        :param atts: A list of attitudes.
+        :param n: The desired number of resampled attitudes.
+        :return: A list of resampled attitudes.
+        """
         total_v, v_ratios = len(atts), {}
 
         for v in Counter(atts).most_common(): v_ratios[v[0]] = v[1] / total_v
@@ -540,7 +639,13 @@ class TopicAttitudeCalculator:
         return r_atts
 
     def load_sentiment_attitudes(self):
+        """
+        Loads sentiment attitudes from stored attitude files and associates them with noun phrases.
 
+        This method uses multiprocessing for efficient loading of attitude data.
+
+        :return: None
+        """
         pool = Pool(multiprocessing.cpu_count() - 4)
 
         for result in tqdm(
@@ -568,13 +673,23 @@ class TopicAttitudeCalculator:
         pool.join()
 
     def read_sentiment_attitudes(self, path):
+        """
+        Reads sentiment attitude data from a file.
 
+        :param path: The path to the sentiment attitude file.
+        :return: A dictionary containing sentiment attitudes for noun phrases.
+        """
         with open(path, 'rb') as f: attidute_object = pickle.load(f)
 
         return attidute_object['noun_phrase_attitudes']
 
     def extract_dipole_topics(self, dipole_tuple):
+        """
+        Extracts dipole-related topic information, including attitudes and clusters.
 
+        :param dipole_tuple: A tuple containing dipole information and sentiment attitudes.
+        :return: A dictionary containing dipole-related topic information.
+        """
         dipole_id, dipole_obj, np_attitudes_dict = dipole_tuple[0], dipole_tuple[1], {}
 
         for entity in dipole_obj['d_ij'].nodes():
@@ -612,7 +727,11 @@ class TopicAttitudeCalculator:
         }
 
     def get_polarization_topics(self):
+        """
+        Retrieves dipole-related topics and organizes them in a dictionary.
 
+        :return: A dictionary containing dipole-related topic information.
+        """
         dipole_topics = []
 
         for dipole in self.dipoles:
@@ -633,7 +752,12 @@ class TopicAttitudeCalculator:
         return self.dipole_topics_dict
 
     def get_topic_attitudes(self, aggr_func=numpy.mean):
+        """
+        Retrieves topic attitudes and polarization indices for dipoles.
 
+        :param aggr_func: Aggregation function for sentiment attitudes.
+        :return: A list of dictionaries containing topic attitudes and polarization indices for dipoles.
+        """
         self.get_polarization_topics()
 
         dipole_topic_attitudes = []
