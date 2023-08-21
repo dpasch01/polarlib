@@ -12,8 +12,8 @@ setuptools.setup(
     description                   = "N/A",
     long_description              = long_description,
     long_description_content_type = "text/markdown",
-    packages                      = setuptools.find_packages(where="polarlib"),
-    package_dir                   = {'': 'polarlib'},
+    packages                      = setuptools.find_packages(where="src"),
+    package_dir                   = {'': 'src'},
     python_requires               = '>=3.9',
     install_requires              = reqs
 )

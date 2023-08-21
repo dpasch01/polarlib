@@ -707,7 +707,7 @@ if __name__ == "__main__":
         n_iter     = 1,
         resolution = 0.05,
         merge_iter = 1,
-        jar_path   = '../',
+        jar_path   ='../../',
         verbose    = True
     )
 
