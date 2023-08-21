@@ -417,6 +417,8 @@ class TopicIdentifier:
 
 if __name__ == "__main__":
 
-    topic_identifier = TopicIdentifier(output_dir="./example")
+    """python -m textblob.download_corpora"""
+
+    topic_identifier = TopicIdentifier(output_dir="../example")
     topic_identifier.encode_noun_phrases()
     topic_identifier.noun_phrase_clustering()

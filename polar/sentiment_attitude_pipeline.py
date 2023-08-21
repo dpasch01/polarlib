@@ -250,7 +250,7 @@ if __name__ == "__main__":
     logging_steps               = 10
 
     training_args = TrainingArguments(
-        output_dir                  = 'roberta_pitch_funding',
+        output_dir                  = '../.cache',
         weight_decay                = 0.02,
         learning_rate               = 1e-5,
         evaluation_strategy         = "epoch",
@@ -265,14 +265,15 @@ if __name__ == "__main__":
         disable_tqdm                = True
     )
 
-    model_path = "/home/dpasch01/notebooks/Sentiment Attitude Model/roberta-base-sentiment-attitude/pretrained"
+    model_path = "/home/dpasch01/notebooks/Sentiment Attitude Classification/models/roberta-base-sentiment-attitude/pretrained"
+
     model_name = 'roberta-base'
 
     tokenizer  = AutoTokenizer.from_pretrained(model_name)
     model      = AutoModelForSequenceClassification.from_pretrained(model_path)
 
     sentiment_attitude_pipeline = SentimentAttitudePipeline(
-        output_dir    = "./example",
+        output_dir    = "../example",
         model         = model,
         tokenizer     = tokenizer,
         training_args = training_args

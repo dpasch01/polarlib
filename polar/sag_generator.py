@@ -184,7 +184,7 @@ class SAGGenerator:
 
 if __name__ == "__main__":
 
-    sag_generator = SAGGenerator('./example')
+    sag_generator = SAGGenerator('../example')
 
     sag_generator.load_sentiment_attitudes()
 

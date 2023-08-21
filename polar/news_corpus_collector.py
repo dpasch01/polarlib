@@ -415,11 +415,11 @@ if __name__ == "__main__":
      )
 
     keywords         = keyword_extractor.extract_keywords(n=20)
-    keywords         = ["lioness"]
+    keywords         = ["openai", "gpt"]
 
     corpus_collector = NewsCorpusCollector(
         output_dir   = "./example",
-        from_date    = date(year = 2023, month = 8, day = 14),
+        from_date    = date(year = 2023, month = 8, day = 15),
         to_date      = date(year = 2023, month = 8, day = 15),
         keywords     = keywords
     )

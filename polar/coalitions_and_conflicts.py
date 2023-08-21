@@ -38,7 +38,7 @@ class FellowshipExtractor:
 
         if len(negative_edges) + len(positive_edges) == 0: raise InsufficientSignedEdgesException(self)
 
-    def _decode_fellowship_list(f_list, simap_iteration_dict): return [simap_iteration_dict[int(index.split('_')[0])][int(index.split('_')[1])] for index in f_list]
+    def _decode_fellowship_list(self, f_list, simap_iteration_dict): return [simap_iteration_dict[int(index.split('_')[0])][int(index.split('_')[1])] for index in f_list]
 
     def signed_network_clustering(self, resolution=0.00, verbose=True, jar_path='./'):
 
@@ -372,7 +372,7 @@ class DipoleGenerator:
             'positive_ratio': p_positive
         }]
 
-    def calculate_frustration(d):
+    def calculate_frustration(self, d):
 
         si_sign_G, si_adj_sign_G, si_sign_edgelist, si_int_to_node = G_to_fi(d[1]['d_ij'])
         si_f_g, si_f_e, si_t, si_solution_dict = calculate_frustration_index(si_sign_G, si_adj_sign_G, si_sign_edgelist)
@@ -383,7 +383,7 @@ class DipoleGenerator:
 
     def generate_dipoles(self, f_g_thr=0.7, n_r_thr=0.5):
 
-        self.dipoles = self.generate_dipoles(f_g_thr=f_g_thr, n_r_thr=f_g_thr)
+        self.dipoles = self._generate_dipoles(f_g_thr=f_g_thr, n_r_thr=f_g_thr)
         with open(os.path.join(self.output_dir, 'dipoles.pckl'), 'wb') as f: pickle.dump(self.dipoles, f)
 
     def _generate_dipoles(self, f_g_thr=0.7, n_r_thr=0.5):
@@ -701,20 +701,20 @@ class TopicAttitudeCalculator:
 
 if __name__ == "__main__":
 
-    fellowship_extractor = FellowshipExtractor('./example')
+    fellowship_extractor = FellowshipExtractor('../example')
 
     fellowships          = fellowship_extractor.extract_fellowships(
-        n_iter     = 5,
+        n_iter     = 1,
         resolution = 0.05,
-        merge_iter = 5,
-        jar_path   = './',
+        merge_iter = 1,
+        jar_path   = '../',
         verbose    = True
     )
 
-    dipole_generator = DipoleGenerator('./example')
+    dipole_generator = DipoleGenerator('../example')
     dipoles          = dipole_generator.generate_dipoles(f_g_thr=0.7, n_r_thr=0.5)
 
-    topic_attitude_calculator = TopicAttitudeCalculator('./example')
+    topic_attitude_calculator = TopicAttitudeCalculator('../example')
     topic_attitude_calculator.load_sentiment_attitudes()
 
     topic_attitudes           = topic_attitude_calculator.get_topic_attitudes()

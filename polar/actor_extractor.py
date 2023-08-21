@@ -260,13 +260,15 @@ class NounPhraseExtractor:
 
 if __name__ == "__main__":
 
+    """python -m spacy download en_core_web_sm"""
+
     nlp = spacy.load("en_core_web_sm")
 
-    entity_extractor = EntityExtractor(output_dir   = "./example")
+    entity_extractor = EntityExtractor(output_dir   = "../example")
 
     entity_extractor.extract_entities()
 
-    noun_phrase_extractor = NounPhraseExtractor(output_dir="./example")
+    noun_phrase_extractor = NounPhraseExtractor(output_dir="../example")
 
     noun_phrase_extractor.extract_noun_phrases()
 
