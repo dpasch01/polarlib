@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src.polarlib.news_corpus_collector &mdash; POLARLib 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            POLARLib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">POLARLib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">src.polarlib.news_corpus_collector</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for src.polarlib.news_corpus_collector</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">itertools</span><span class="o">,</span> <span class="nn">multiprocessing</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">wget</span><span class="o">,</span> <span class="nn">urllib</span><span class="o">,</span> <span class="nn">numpy</span><span class="o">,</span> <span class="nn">string</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">zipfile</span><span class="o">,</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span><span class="o">,</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">keybert</span> <span class="kn">import</span> <span class="n">KeyBERT</span>
+<span class="kn">from</span> <span class="nn">newspaper</span> <span class="kn">import</span> <span class="n">Article</span><span class="p">,</span> <span class="n">Config</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
+
+<span class="n">GDELT_BASE</span> <span class="o">=</span> <span class="s1">&#39;http://data.gdeltproject.org/events/</span><span class="si">{}</span><span class="s1">.export.CSV.zip&#39;</span>
+
+<span class="n">GDELT_FIELDS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">&#39;globaleventid&#39;</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">,</span> <span class="s1">&#39;monthyear&#39;</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">,</span> <span class="s1">&#39;fractiondate&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1name&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1countrycode&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actor1knowngroupcode&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1ethniccode&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1religion1code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1religion2code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1type1code&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actor1type2code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1type3code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2name&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2countrycode&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2knowngroupcode&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actor2ethniccode&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2religion1code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2religion2code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2type1code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2type2code&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actor2type3code&#39;</span><span class="p">,</span> <span class="s1">&#39;isrootevent&#39;</span><span class="p">,</span> <span class="s1">&#39;eventcode&#39;</span><span class="p">,</span> <span class="s1">&#39;eventbasecode&#39;</span><span class="p">,</span> <span class="s1">&#39;eventrootcode&#39;</span><span class="p">,</span> <span class="s1">&#39;quadclass&#39;</span><span class="p">,</span> <span class="s1">&#39;goldsteinscale&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;nummentions&#39;</span><span class="p">,</span> <span class="s1">&#39;numsources&#39;</span><span class="p">,</span> <span class="s1">&#39;numarticles&#39;</span><span class="p">,</span> <span class="s1">&#39;avgtone&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1geo_type&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1geo_fullname&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actor1geo_countrycode&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1geo_adm1code&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1geo_lat&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1geo_long&#39;</span><span class="p">,</span> <span class="s1">&#39;actor1geo_featureid&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actor2geo_type&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2geo_fullname&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2geo_countrycode&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2geo_adm1code string&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2geo_lat&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actor2geo_long&#39;</span><span class="p">,</span> <span class="s1">&#39;actor2geo_featureid&#39;</span><span class="p">,</span> <span class="s1">&#39;actiongeo_type&#39;</span><span class="p">,</span> <span class="s1">&#39;actiongeo_fullname&#39;</span><span class="p">,</span> <span class="s1">&#39;actiongeo_countrycode&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;actiongeo_adm1code&#39;</span><span class="p">,</span> <span class="s1">&#39;actiongeo_lat&#39;</span><span class="p">,</span> <span class="s1">&#39;actiongeo_long&#39;</span><span class="p">,</span> <span class="s1">&#39;actiongeo_featureid&#39;</span><span class="p">,</span> <span class="s1">&#39;dateadded&#39;</span><span class="p">,</span> <span class="s1">&#39;sourceurl&#39;</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="URLKeywordExtractor">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.URLKeywordExtractor">[docs]</a>
+<span class="k">class</span> <span class="nc">URLKeywordExtractor</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url_list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the URLKeywordExtractor instance.</span>
+
+<span class="sd">        :param url_list: A list of URLs to extract keywords from.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TOKENIZERS_PARALLELISM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;false&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">url_list</span> <span class="o">=</span> <span class="n">url_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span>    <span class="o">=</span> <span class="n">KeyBERT</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">texts</span>    <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">url_list</span><span class="p">):</span>
+
+            <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+
+            <span class="n">article</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+            <span class="n">article</span><span class="o">.</span><span class="n">parse</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+<div class="viewcode-block" id="URLKeywordExtractor.extract_keywords">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.URLKeywordExtractor.extract_keywords">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_keywords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract keywords from the stored article texts.</span>
+
+<span class="sd">        :param n: Number of top keywords to extract (default is 20).</span>
+<span class="sd">        :return: A list of extracted keywords.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">keyword_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">texts</span><span class="p">:</span> <span class="n">keyword_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">extract_keywords</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">top_n</span><span class="o">=</span><span class="n">n</span><span class="p">)]</span>
+
+        <span class="n">keyword_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">keyword_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)[:</span><span class="n">n</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keyword_list</span><span class="p">]</span></div>
+</div>
+
+
+<div class="viewcode-block" id="NewsCorpusCollector">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector">[docs]</a>
+<span class="k">class</span> <span class="nc">NewsCorpusCollector</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">from_date</span><span class="p">,</span> <span class="n">to_date</span><span class="p">,</span> <span class="n">keywords</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the NewsCorpusGenerator.</span>
+
+<span class="sd">        :param output_dir: Output directory for storing downloaded data.</span>
+<span class="sd">        :param from_date: Starting date for data collection.</span>
+<span class="sd">        :param to_date: Ending date for data collection.</span>
+<span class="sd">        :param keywords: List of keywords for filtering articles.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">from_date</span>  <span class="o">=</span> <span class="n">from_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_date</span>    <span class="o">=</span> <span class="n">to_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_date</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_date</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="o">.</span><span class="n">days</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keywords</span>   <span class="o">=</span> <span class="n">keywords</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">):</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Warning: Path </span><span class="se">\&#39;</span><span class="si">%s</span><span class="se">\&#39;</span><span class="s1"> already exists.&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;dumps&#39;</span><span class="p">))</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">))</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;articles&#39;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span>                    <span class="o">=</span> <span class="n">Config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">browser_user_agent</span> <span class="o">=</span> <span class="s1">&#39;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">request_timeout</span>    <span class="o">=</span> <span class="mi">3</span>
+
+<div class="viewcode-block" id="NewsCorpusCollector.collect_archives">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector.collect_archives">[docs]</a>
+    <span class="k">def</span> <span class="nf">collect_archives</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Collect GDELT archives and store them in the specified output directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Retrieving GDELT Dumps&#39;</span><span class="p">):</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">d_str</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;dumps/</span><span class="si">{}</span><span class="s1">.export.CSV.zip&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d_str</span><span class="p">))):</span> <span class="k">continue</span>
+
+            <span class="n">wget</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">GDELT_BASE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d_str</span><span class="p">),</span> <span class="n">out</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;dumps&#39;</span><span class="p">))</span>
+
+        <span class="k">return</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_link_source</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sourceurl</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract the source URL from a given URL.</span>
+
+<span class="sd">        :param sourceurl: Source URL.</span>
+<span class="sd">        :return: Extracted source.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sourceurl</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">sourceurl</span><span class="p">):</span> <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">sourceurl</span><span class="p">)</span><span class="o">.</span><span class="n">netloc</span>
+
+    <span class="k">def</span> <span class="nf">_get_link_source_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sourceurl</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract the source URL path from a given URL.</span>
+
+<span class="sd">        :param sourceurl: Source URL.</span>
+<span class="sd">        :return: Extracted source path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sourceurl</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">numpy</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">sourceurl</span><span class="p">):</span> <span class="k">return</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">sourceurl</span><span class="p">)</span><span class="o">.</span><span class="n">path</span>
+
+    <span class="k">def</span> <span class="nf">_get_query_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">gd_day</span><span class="p">,</span> <span class="n">archive_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a query URL for archiving or retrieving.</span>
+
+<span class="sd">        :param url: Original URL.</span>
+<span class="sd">        :param gd_day: GDELT day.</span>
+<span class="sd">        :param archive_flag: Flag to determine if archiving is used.</span>
+<span class="sd">        :return: Query URL.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">archive_flag</span><span class="p">:</span> <span class="k">return</span> <span class="s1">&#39;https://web.archive.org/web/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">gd_day</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;00000/&#39;</span> <span class="o">+</span> <span class="n">url</span>
+        <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="n">url</span>
+
+    <span class="k">def</span> <span class="nf">_format_title</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Format a string for use as a title.</span>
+
+<span class="sd">        :param s: Input string.</span>
+<span class="sd">        :return: Formatted string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span><span class="p">:</span> <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39; +&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">s</span><span class="p">[:]</span>
+
+<div class="viewcode-block" id="NewsCorpusCollector.retrieve_article">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector.retrieve_article">[docs]</a>
+    <span class="k">def</span> <span class="nf">retrieve_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">article_url</span><span class="p">,</span> <span class="n">parse_flag</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">nlp_flag</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve and parse an article from a given URL.</span>
+
+<span class="sd">        :param article_url: Article URL.</span>
+<span class="sd">        :param parse_flag: Flag to indicate parsing.</span>
+<span class="sd">        :param nlp_flag: Flag to indicate NLP processing.</span>
+<span class="sd">        :return: Parsed article object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="p">(</span><span class="n">article_url</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">parse_flag</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">parse</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">parse_flag</span> <span class="ow">and</span> <span class="n">nlp_flag</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">nlp</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">article</span></div>
+
+
+<div class="viewcode-block" id="NewsCorpusCollector.pre_process_article">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector.pre_process_article">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_process_article</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Pre-process and store the article for later analysis.</span>
+
+<span class="sd">        :param path: path to the article .json file</span>
+<span class="sd">        :return: Boolean</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">article_obj</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+        <span class="n">article_dict_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="n">article_obj</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pipeline_func</span><span class="p">(</span>
+                <span class="n">article_obj</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span>
+                <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_replace_special</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_uncontract</span><span class="p">,</span>
+                    <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="p">})</span>
+
+        <span class="n">output_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;pre_processed/&#39;</span> <span class="o">+</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">output_folder</span> <span class="o">+</span> <span class="n">article_obj</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_folder</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>     <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">article_dict_str</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_replace_special</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;``&#39;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;`&#39;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;“&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;”&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;’&#39;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;‘&#39;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;–&#39;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;—&#39;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\&quot;</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">text</span>
+
+    <span class="k">def</span> <span class="nf">_uncontract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+            <span class="sa">r</span><span class="s2">&quot;(\b)([Aa]re|[Cc]ould|[Dd]id|[Dd]oes|[Dd]o|[Hh]ad|[Hh]as|[Hh]ave|[Ii]s|[Mm]ight|[Mm]ust|[Ss]hould|[Ww]ere|[Ww]ould)n&#39;t&quot;</span><span class="p">,</span>
+            <span class="sa">r</span><span class="s2">&quot;\1\2 not&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Hh]e|[Ii]|[Ss]he|[Tt]hey|[Ww]e|[Ww]hat|[Ww]ho|[Yy]ou)&#39;ll&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2 will&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Tt]hey|[Ww]e|[Ww]hat|[Ww]ho|[Yy]ou)&#39;re&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2 are&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Ii]|[Ss]hould|[Tt]hey|[Ww]e|[Ww]hat|[Ww]ho|[Ww]ould|[Yy]ou)&#39;ve&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2 have&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Cc]a)n&#39;t&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2n not&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Ii])&#39;m&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2 am&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Ll]et)&#39;s&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2 us&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Tt]here)&#39;s&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2 is&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Ww])on&#39;t&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2ill not&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Ss])han&#39;t&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2hall not&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\b)([Yy])(?:&#39;all|a&#39;ll)&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\1\2ou all&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">text</span>
+
+    <span class="k">def</span> <span class="nf">_pipeline_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">func_list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">func_list</span><span class="p">:</span> <span class="n">text</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">text</span>
+
+<div class="viewcode-block" id="NewsCorpusCollector.pre_process_articles">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector.pre_process_articles">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_process_articles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">article_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;articles/&#39;</span> <span class="o">+</span> <span class="n">p</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;articles/&#39;</span><span class="p">)))]</span>
+        <span class="n">article_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([[</span><span class="n">p</span> <span class="o">+</span> <span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">p</span><span class="p">)]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">article_paths</span><span class="p">]))</span>
+
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_process_article</span><span class="p">,</span> <span class="n">article_paths</span><span class="p">),</span>
+                <span class="n">desc</span>  <span class="o">=</span> <span class="s1">&#39;Article Pre-processing&#39;</span><span class="p">,</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">article_paths</span><span class="p">)</span>
+        <span class="p">):</span> <span class="k">pass</span>
+
+        <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="NewsCorpusCollector.article_collection_process">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector.article_collection_process">[docs]</a>
+    <span class="k">def</span> <span class="nf">article_collection_process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idxhgd</span><span class="p">):</span>
+
+        <span class="n">idx</span><span class="p">,</span> <span class="n">hgd</span> <span class="o">=</span> <span class="n">idxhgd</span>
+
+        <span class="n">archive_url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_query_url</span><span class="p">(</span>
+            <span class="n">hgd</span><span class="p">[</span><span class="s1">&#39;sourceurl&#39;</span><span class="p">],</span>
+            <span class="n">hgd</span><span class="p">[</span><span class="s1">&#39;day&#39;</span><span class="p">],</span>
+            <span class="n">archive_flag</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="n">hgd</span><span class="p">[</span><span class="s1">&#39;config_day&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hgd</span><span class="p">[</span><span class="s1">&#39;d_str&#39;</span><span class="p">]</span>
+
+        <span class="k">try</span><span class="p">:</span> <span class="n">article_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_article</span><span class="p">(</span><span class="n">archive_url</span><span class="p">,</span> <span class="n">parse_flag</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">archive_url</span><span class="p">,</span> <span class="n">ex</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">output_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;html/&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">hgd</span><span class="p">[</span><span class="s1">&#39;config_day&#39;</span><span class="p">]))</span>
+        <span class="n">output_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">hgd</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_format_title</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_link_source_path</span><span class="p">(</span><span class="n">archive_url</span><span class="p">))[:</span><span class="mi">100</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">html_file</span><span class="p">:</span>
+            <span class="n">html_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">article_obj</span><span class="o">.</span><span class="n">html</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="NewsCorpusCollector.collect_articles">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector.collect_articles">[docs]</a>
+    <span class="k">def</span> <span class="nf">collect_articles</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">actor1countrycode</span> <span class="o">=</span> <span class="s1">&#39;USA&#39;</span><span class="p">,</span>
+            <span class="n">actor2countrycode</span> <span class="o">=</span> <span class="s1">&#39;USA&#39;</span><span class="p">,</span>
+            <span class="n">n_articles</span>        <span class="o">=</span> <span class="mi">1000</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Collect articles from GDELT archives and store them.</span>
+
+<span class="sd">        :param actor1countrycode: Actor 1 country code.</span>
+<span class="sd">        :param actor2countrycode: Actor 2 country code.</span>
+<span class="sd">        :param n_threads: Number of threads for parallel processing.</span>
+<span class="sd">        :param use_web_archive: Flag to use web archiving.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">):</span>
+
+            <span class="n">d</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">d_str</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">zf</span>    <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}{}</span><span class="s1">.export.CSV.zip&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;dumps/&#39;</span><span class="p">),</span> <span class="n">d_str</span><span class="p">))</span>
+
+            <span class="n">gd_df</span>         <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">zf</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">.export.CSV&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">d_str</span><span class="p">)),</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">gd_df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">GDELT_FIELDS</span>
+
+            <span class="n">gd_df</span><span class="p">[</span><span class="s1">&#39;sourceurl_path&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gd_df</span><span class="p">[</span><span class="s1">&#39;sourceurl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_link_source_path</span><span class="p">)</span>
+            <span class="n">gd_df</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>         <span class="o">=</span> <span class="n">gd_df</span><span class="p">[</span><span class="s1">&#39;sourceurl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_link_source</span><span class="p">)</span>
+
+            <span class="c1">#######################################</span>
+            <span class="c1"># Here add your filters for the GDELT #</span>
+            <span class="c1"># articles. For example, I want the   #</span>
+            <span class="c1"># articles to be related to the US.   #</span>
+            <span class="c1">#######################################</span>
+
+            <span class="n">scope_df</span> <span class="o">=</span> <span class="n">gd_df</span><span class="p">[((</span><span class="n">gd_df</span><span class="p">[</span><span class="s1">&#39;actor1countrycode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">actor1countrycode</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">gd_df</span><span class="p">[</span><span class="s1">&#39;actor2countrycode&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">actor2countrycode</span><span class="p">))]</span>
+
+            <span class="n">scope_df</span><span class="p">[</span><span class="s1">&#39;n_keywords&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scope_df</span><span class="p">[</span><span class="s1">&#39;sourceurl_path&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">keywords</span><span class="p">))</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="nb">len</span><span class="p">)</span>
+
+            <span class="n">scope_df</span> <span class="o">=</span> <span class="n">scope_df</span><span class="p">[</span><span class="n">scope_df</span><span class="p">[</span><span class="s1">&#39;n_keywords&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">scope_df</span> <span class="o">=</span> <span class="n">scope_df</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span>
+
+            <span class="n">scope_df</span><span class="p">[</span><span class="s1">&#39;d_str&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">d_str</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">scope_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">n_articles</span><span class="p">:</span> <span class="n">n_articles</span> <span class="o">=</span> <span class="n">scope_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1">#######################################################################################################</span>
+            <span class="c1"># scope_df = scope_df[scope_df[&#39;sourceurl_path&#39;].str.findall(&#39;|&#39;.join(self.keywords)).apply(len) &gt; 0] #</span>
+            <span class="c1">#######################################################################################################</span>
+
+            <span class="n">scope_df</span> <span class="o">=</span> <span class="n">scope_df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;n_keywords&#39;</span><span class="p">],</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">scope_df</span> <span class="o">=</span> <span class="n">scope_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">n_articles</span><span class="p">]</span>
+
+            <span class="n">article_n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">scope_df</span><span class="p">[</span><span class="s1">&#39;sourceurl&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+            <span class="n">scope_df</span>  <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">scope_df</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;- Fetching </span><span class="si">{}</span><span class="s1"> articles for: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">article_n</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y %m </span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">article_n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;html/&#39;</span> <span class="o">+</span> <span class="n">d_str</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+            <span class="n">_</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">scope_df</span><span class="p">))</span>
+
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                    <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">article_collection_process</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span>
+                    <span class="n">desc</span>  <span class="o">=</span> <span class="s1">&#39;Fetching Article HTML&#39;</span><span class="p">,</span>
+                    <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">_</span><span class="p">)</span>
+            <span class="p">):</span> <span class="k">pass</span>
+
+            <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+            <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39; [</span><span class="si">{}</span><span class="s1">s]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span><span class="p">,</span> <span class="mi">6</span><span class="p">)))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">()</span>
+
+        <span class="n">file_paths</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">))):</span>
+            <span class="n">d</span>     <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_date</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">d_str</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="n">daily_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;html/&#39;</span> <span class="o">+</span> <span class="n">d_str</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+            <span class="n">file_paths</span> <span class="o">+=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">daily_path</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">daily_path</span><span class="p">)]</span>
+
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parse_html</span><span class="p">,</span> <span class="n">file_paths</span><span class="p">),</span>
+                <span class="n">desc</span>  <span class="o">=</span> <span class="s1">&#39;HTML Parsing&#39;</span><span class="p">,</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_paths</span><span class="p">)</span>
+        <span class="p">):</span> <span class="k">pass</span>
+
+        <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="NewsCorpusCollector.parse_html">
+<a class="viewcode-back" href="../../../src.polarlib.html#src.polarlib.news_corpus_collector.NewsCorpusCollector.parse_html">[docs]</a>
+    <span class="k">def</span> <span class="nf">parse_html</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse HTML content from a file.</span>
+
+<span class="sd">        :param file_path: Path to the HTML file.</span>
+<span class="sd">        :return: True if parsing is successful.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">html_content</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="n">hgd</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">uid</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.html&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="s1">&#39;en&#39;</span><span class="p">)</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="n">input_html</span><span class="o">=</span><span class="n">html_content</span><span class="p">)</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">parse</span><span class="p">()</span>
+
+        <span class="n">hgd_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">hgd</span><span class="p">,</span> <span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">article_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span>              <span class="n">article</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
+            <span class="s1">&#39;uid&#39;</span><span class="p">:</span>              <span class="n">uid</span><span class="p">,</span>
+            <span class="s1">&#39;images&#39;</span><span class="p">:</span>           <span class="nb">list</span><span class="p">(</span><span class="n">article</span><span class="o">.</span><span class="n">images</span><span class="p">),</span>
+            <span class="s1">&#39;publication-date&#39;</span><span class="p">:</span> <span class="n">article</span><span class="o">.</span><span class="n">publish_date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">publish_date</span> <span class="k">else</span> <span class="n">hgd_dt</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;text&#39;</span><span class="p">:</span>             <span class="n">article</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span>            <span class="n">article</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s1">&#39;top-image&#39;</span><span class="p">:</span>        <span class="n">article</span><span class="o">.</span><span class="n">top_image</span>
+        <span class="p">}</span>
+
+        <span class="n">article_dict_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">article_dict</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">output_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;articles/&#39;</span> <span class="o">+</span> <span class="n">hgd</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">output_file</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">uid</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_folder</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">html_file</span><span class="p">:</span> <span class="n">html_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">article_dict_str</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="n">keyword_extractor</span> <span class="o">=</span> <span class="n">URLKeywordExtractor</span><span class="p">(</span>
+        <span class="n">url_list</span><span class="o">=</span><span class="p">[</span>
+            <span class="s1">&#39;https://www.businessinsider.com/everything-you-need-to-know-about-chat-gpt-2023-1&#39;</span>
+        <span class="p">]</span>
+     <span class="p">)</span>
+
+    <span class="n">keywords</span>         <span class="o">=</span> <span class="n">keyword_extractor</span><span class="o">.</span><span class="n">extract_keywords</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">keywords</span>         <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;openai&quot;</span><span class="p">,</span> <span class="s2">&quot;gpt&quot;</span><span class="p">]</span>
+
+    <span class="n">corpus_collector</span> <span class="o">=</span> <span class="n">NewsCorpusCollector</span><span class="p">(</span>
+        <span class="n">output_dir</span>   <span class="o">=</span> <span class="s2">&quot;./example&quot;</span><span class="p">,</span>
+        <span class="n">from_date</span>    <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="n">year</span> <span class="o">=</span> <span class="mi">2023</span><span class="p">,</span> <span class="n">month</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="n">day</span> <span class="o">=</span> <span class="mi">15</span><span class="p">),</span>
+        <span class="n">to_date</span>      <span class="o">=</span> <span class="n">date</span><span class="p">(</span><span class="n">year</span> <span class="o">=</span> <span class="mi">2023</span><span class="p">,</span> <span class="n">month</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span> <span class="n">day</span> <span class="o">=</span> <span class="mi">15</span><span class="p">),</span>
+        <span class="n">keywords</span>     <span class="o">=</span> <span class="n">keywords</span>
+    <span class="p">)</span>
+
+    <span class="n">corpus_collector</span><span class="o">.</span><span class="n">collect_archives</span><span class="p">()</span>
+    <span class="n">corpus_collector</span><span class="o">.</span><span class="n">collect_articles</span><span class="p">()</span>
+    <span class="n">corpus_collector</span><span class="o">.</span><span class="n">pre_process_articles</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Demetris Paschalides.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

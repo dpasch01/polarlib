@@ -1,0 +1,69 @@
+src.polarlib package
+====================
+
+Submodules
+----------
+
+src.polarlib.actor_extractor module
+------------------------------------
+
+.. automodule:: src.polarlib.actor_extractor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.polarlib.coalitions_and_conflicts module
+----------------------------------------------
+
+.. automodule:: src.polarlib.coalitions_and_conflicts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.polarlib.frustration module
+-------------------------------
+
+.. automodule:: src.polarlib.frustration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.polarlib.news_corpus_collector module
+-------------------------------------------
+
+.. automodule:: src.polarlib.news_corpus_collector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.polarlib.sag_generator module
+----------------------------------
+
+.. automodule:: src.polarlib.sag_generator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.polarlib.topic_identifier module
+-------------------------------------
+
+.. automodule:: src.polarlib.topic_identifier
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+src.polarlib.utilities module
+-----------------------------
+
+.. automodule:: src.polarlib.utilities
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Module contents
+---------------
+
+.. automodule:: src.polarlib
+   :members:
+   :undoc-members:
+   :show-inheritance:
