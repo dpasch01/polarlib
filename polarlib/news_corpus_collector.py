@@ -8,6 +8,8 @@ from newspaper import Article, Config
 from datetime import datetime, date, timedelta
 from multiprocessing import Pool, Process, Manager
 
+from concurrent.futures import ThreadPoolExecutor
+
 from requests.exceptions import ConnectionError, InvalidSchema, MissingSchema, TooManyRedirects, RetryError
 
 GDELT_BASE = 'http://data.gdeltproject.org/events/{}.export.CSV.zip'
@@ -246,11 +248,38 @@ class NewsCorpusCollector:
         pool.close()
         pool.join()
 
+    def article_collection_process(self, idxhgd):
+
+        idx, hgd = idxhgd
+
+        archive_url = self._get_query_url(
+            hgd['sourceurl'],
+            hgd['day'],
+            archive_flag=False
+        )
+
+        hgd['config_day'] = hgd['d_str']
+
+        try: article_obj = self.retrieve_article(archive_url, parse_flag=False)
+        except Exception as ex:
+            print(idx, archive_url, ex)
+            return
+
+        output_folder = os.path.join(self.output_dir, 'html/' + str(hgd['config_day']))
+        output_file = os.path.join(output_folder, hgd['source'] + '.' + self._format_title(self._get_link_source_path(archive_url))[:100] + '.html')
+
+        os.makedirs(output_folder, exist_ok=True)
+        with open(output_file, 'w') as html_file:
+            html_file.write(article_obj.html)
+
+        return True
+
     def collect_articles(
             self,
             actor1countrycode = 'USA',
             actor2countrycode = 'USA',
             n_threads         = 128,
+            n_articles        = 1000,
             use_web_archive   = False
     ):
         """
@@ -260,6 +289,8 @@ class NewsCorpusCollector:
         :param actor2countrycode: Actor 2 country code.
         :param n_threads: Number of threads for parallel processing.
         :param use_web_archive: Flag to use web archiving.
+        """
+
         """
         def article_collection_process(q):
 
@@ -274,8 +305,7 @@ class NewsCorpusCollector:
                 )
 
                 hgd['config_day'] = d_str
-
-                article_obj = None
+                article_obj       = None
 
                 try: article_obj = self.retrieve_article(archive_url, parse_flag=False)
                 except Exception as ex:
@@ -293,6 +323,7 @@ class NewsCorpusCollector:
                 q.task_done()
 
                 return
+        """
 
         for i in range(self.duration):
 
@@ -313,30 +344,61 @@ class NewsCorpusCollector:
             #######################################
 
             scope_df = gd_df[((gd_df['actor1countrycode'] == actor1countrycode) | (gd_df['actor2countrycode'] == actor2countrycode))]
-            scope_df = scope_df[scope_df['sourceurl_path'].str.findall('|'.join(self.keywords)).apply(len) > 0]
-            scope_df = scope_df.sort_values(by=['numarticles'], ascending=False)
+
+            scope_df['n_keywords'] = scope_df['sourceurl_path'].str.findall('|'.join(self.keywords)).apply(len)
+
+            scope_df = scope_df[scope_df['n_keywords'] > 0]
+            scope_df = scope_df.drop_duplicates()
+
+            scope_df['d_str'] = [d_str for _ in range(scope_df.shape[0])]
+
+            if not n_articles: n_articles = scope_df.shape[0]
+
+            #######################################################################################################
+            # scope_df = scope_df[scope_df['sourceurl_path'].str.findall('|'.join(self.keywords)).apply(len) > 0] #
+            #######################################################################################################
+
+            scope_df = scope_df.sort_values(by=['n_keywords'], ascending=False)
+            scope_df = scope_df.iloc[:n_articles]
 
             article_n = len(set(scope_df['sourceurl'].values))
             scope_df  = list(scope_df.T.to_dict().values())
-
-            q       = Queue(maxsize=0)
-            threads = min(n_threads, article_n)
 
             sys.stdout.write('- Fetching {} articles for: {}'.format(article_n, d.strftime('%Y %m %d')))
             sys.stdout.flush()
 
             if article_n == 0: os.makedirs(os.path.join(self.output_dir, 'html/' + d_str), exist_ok=True)
 
+            """
+            q       = Queue(maxsize=0)
+            threads = min(n_threads, article_n)
+            
             for j in range(article_n): q.put((j, scope_df[j]))
+            """
 
             t0 = time.time()
 
+            """
             for k in range(threads):
                 thread = Thread(target=article_collection_process, args=[q])
                 thread.setDaemon(True)
                 thread.start()
+            """
 
-            q.join()
+            _ = list(enumerate(scope_df))
+
+            pool = Pool(32)
+
+            for i in tqdm(
+                    pool.imap_unordered(self.article_collection_process, _),
+                    desc  = 'Fetching Article HTML',
+                    total = len(_)
+            ): pass
+
+            pool.close()
+            pool.join()
+
+            """q.join()"""
 
             t1 = time.time()
 
