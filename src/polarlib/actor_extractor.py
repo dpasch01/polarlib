@@ -1,10 +1,9 @@
-import os, spacy, itertools, json, requests, time, string, spotlight, nltk, multiprocessing, re
+import os, spacy, itertools, requests, time, string, spotlight, nltk, multiprocessing
 
-from utilities import *
+from .utilities import *
 
 from tqdm import tqdm
 from nltk import ngrams
-from textblob import TextBlob
 from multiprocessing import Pool
 
 from nltk.corpus import stopwords

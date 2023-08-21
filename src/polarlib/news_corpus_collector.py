@@ -1,16 +1,10 @@
-import json, itertools, multiprocessing, time, os, wget, urllib, numpy, string, re, zipfile, pandas as pd, requests, sys
+import json, itertools, multiprocessing, time, os, wget, urllib, numpy, string, re, zipfile, pandas as pd, sys
 
 from tqdm import tqdm
-from queue import Queue
 from keybert import KeyBERT
-from threading import Thread
 from newspaper import Article, Config
 from datetime import datetime, date, timedelta
-from multiprocessing import Pool, Process, Manager
-
-from concurrent.futures import ThreadPoolExecutor
-
-from requests.exceptions import ConnectionError, InvalidSchema, MissingSchema, TooManyRedirects, RetryError
+from multiprocessing import Pool
 
 GDELT_BASE = 'http://data.gdeltproject.org/events/{}.export.CSV.zip'
 
@@ -35,7 +29,6 @@ class URLKeywordExtractor:
 
         :param url_list: A list of URLs to extract keywords from.
         """
-
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
         self.url_list = url_list
@@ -173,7 +166,12 @@ class NewsCorpusCollector:
         return article
 
     def pre_process_article(self, path):
+        """
+        Pre-process and store the article for later analysis.
 
+        :param path: path to the article .json file
+        :return: Boolean
+        """
         with open(path, 'r') as f: article_obj = json.load(f)
 
         article_dict_str = json.dumps({
@@ -278,9 +276,7 @@ class NewsCorpusCollector:
             self,
             actor1countrycode = 'USA',
             actor2countrycode = 'USA',
-            n_threads         = 128,
-            n_articles        = 1000,
-            use_web_archive   = False
+            n_articles        = 1000
     ):
         """
         Collect articles from GDELT archives and store them.
@@ -289,40 +285,6 @@ class NewsCorpusCollector:
         :param actor2countrycode: Actor 2 country code.
         :param n_threads: Number of threads for parallel processing.
         :param use_web_archive: Flag to use web archiving.
-        """
-
-        """
-        def article_collection_process(q):
-
-            while not q.empty():
-
-                idx, hgd = q.get()
-
-                archive_url = self._get_query_url(
-                    hgd['sourceurl'],
-                    hgd['day'],
-                    archive_flag = use_web_archive
-                )
-
-                hgd['config_day'] = d_str
-                article_obj       = None
-
-                try: article_obj = self.retrieve_article(archive_url, parse_flag=False)
-                except Exception as ex:
-                    print(idx, archive_url, ex)
-                    pass
-
-                output_folder = os.path.join(self.output_dir, 'html/' + str(hgd['config_day']))
-                output_file   = os.path.join(output_folder, hgd['source'] + '.' + self._format_title(self._get_link_source_path(archive_url))[:100] + '.html')
-
-                if not os.path.exists(output_folder): os.makedirs(output_folder, exist_ok=True)
-                with open(output_file, 'w') as html_file: html_file.write(article_obj.html)
-
-                time.sleep(0.100)
-
-                q.task_done()
-
-                return
         """
 
         for i in range(self.duration):
@@ -369,21 +331,7 @@ class NewsCorpusCollector:
 
             if article_n == 0: os.makedirs(os.path.join(self.output_dir, 'html/' + d_str), exist_ok=True)
 
-            """
-            q       = Queue(maxsize=0)
-            threads = min(n_threads, article_n)
-            
-            for j in range(article_n): q.put((j, scope_df[j]))
-            """
-
             t0 = time.time()
-
-            """
-            for k in range(threads):
-                thread = Thread(target=article_collection_process, args=[q])
-                thread.setDaemon(True)
-                thread.start()
-            """
 
             _ = list(enumerate(scope_df))
 
@@ -397,8 +345,6 @@ class NewsCorpusCollector:
 
             pool.close()
             pool.join()
-
-            """q.join()"""
 
             t1 = time.time()
 
