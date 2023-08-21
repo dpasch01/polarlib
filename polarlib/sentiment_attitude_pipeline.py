@@ -1,8 +1,7 @@
 import os, itertools, pandas as pd, pickle
 
 from utilities import *
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from transformers import TextClassificationPipeline
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TextClassificationPipeline
 
 from tqdm import tqdm
 from datasets import Dataset
