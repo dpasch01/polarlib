@@ -52,14 +52,6 @@ polarlib.sag\_generator module
    :undoc-members:
    :show-inheritance:
 
-polarlib.sentiment\_attitude\_pipeline module
----------------------------------------------
-
-.. automodule:: polarlib.sentiment_attitude_pipeline
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 polarlib.topic\_identifier module
 ---------------------------------
 

@@ -76,13 +76,16 @@
 <span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
-
 <div class="viewcode-block" id="SAGGenerator">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.sag_generator.SAGGenerator">[docs]</a>
 <span class="k">class</span> <span class="nc">SAGGenerator</span><span class="p">:</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the SAGGenerator.</span>
 
+<span class="sd">        :param output_dir: The output directory where generated files will be stored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attitude_path_list</span>           <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span>                   <span class="o">=</span> <span class="n">output_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span> <span class="o">=</span> <span class="p">{}</span>
@@ -95,7 +98,12 @@
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TOKENIZERS_PARALLELISM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;false&#39;</span>
 
     <span class="k">def</span> <span class="nf">_read_sentiment_attitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read sentiment attitudes from a given path.</span>
 
+<span class="sd">        :param path: The path to the sentiment attitude file.</span>
+<span class="sd">        :return: The entity attitudes from the sentiment attitude file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">attidute_object</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">attidute_object</span><span class="p">[</span><span class="s1">&#39;entity_attitudes&#39;</span><span class="p">]</span>
@@ -103,7 +111,9 @@
 <div class="viewcode-block" id="SAGGenerator.load_sentiment_attitudes">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.sag_generator.SAGGenerator.load_sentiment_attitudes">[docs]</a>
     <span class="k">def</span> <span class="nf">load_sentiment_attitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load sentiment attitudes from multiple files in parallel and update the pair_sentiment_attitude_dict.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
@@ -127,7 +137,12 @@
 <div class="viewcode-block" id="SAGGenerator.calculate_attitude_buckets">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.sag_generator.SAGGenerator.calculate_attitude_buckets">[docs]</a>
     <span class="k">def</span> <span class="nf">calculate_attitude_buckets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculate attitude buckets based on sentiment attitudes.</span>
 
+<span class="sd">        :param verbose: If True, print additional statistics.</span>
+<span class="sd">        :return: A list of attitude buckets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">attitude_population_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([</span><span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()]))</span>
 
         <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
@@ -157,6 +172,13 @@
 <div class="viewcode-block" id="SAGGenerator.convert_attitude_signs">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.sag_generator.SAGGenerator.convert_attitude_signs">[docs]</a>
     <span class="k">def</span> <span class="nf">convert_attitude_signs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_category_mapping</span><span class="p">,</span> <span class="n">minimum_frequency</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert sentiment attitudes to attitude signs based on bin category mapping.</span>
+
+<span class="sd">        :param bin_category_mapping: A dictionary that maps bin categories to their respective bins.</span>
+<span class="sd">        :param minimum_frequency: Minimum frequency threshold for pairs to be included.</span>
+<span class="sd">        :param verbose: If True, print additional information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        bin_category_mapping = {</span>
@@ -206,7 +228,11 @@
 <div class="viewcode-block" id="SAGGenerator.construct_sag">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.sag_generator.SAGGenerator.construct_sag">[docs]</a>
     <span class="k">def</span> <span class="nf">construct_sag</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct a Signed Attitude Graph (SAG) based on sentiment attitudes.</span>
 
+<span class="sd">        :return: The constructed SAG, node mappings, and edge weights.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">pair_frequency_dict</span>                  <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="n">G</span><span class="p">,</span> <span class="n">node_id</span><span class="p">,</span> <span class="n">node_to_int</span><span class="p">,</span> <span class="n">int_to_node</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="p">{},</span> <span class="p">{}</span>
 

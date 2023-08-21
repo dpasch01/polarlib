@@ -78,7 +78,7 @@
 <span class="kn">import</span> <span class="nn">pickle5</span> <span class="k">as</span> <span class="nn">pickle</span>
 
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
-<span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">.miscellaneous</span> <span class="kn">import</span> <span class="o">*</span>
 
 <span class="kn">from</span> <span class="nn">nltk.corpus</span> <span class="kn">import</span> <span class="n">stopwords</span>
 <span class="kn">from</span> <span class="nn">textblob</span> <span class="kn">import</span> <span class="n">TextBlob</span><span class="p">,</span> <span class="n">Word</span>
@@ -89,7 +89,12 @@
 <span class="k">class</span> <span class="nc">TopicIdentifier</span><span class="p">:</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the TopicIdentifier object.</span>
 
+<span class="sd">        Parameters:</span>
+<span class="sd">            output_dir (str): The output directory where the results will be saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hyphen_regex</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;(?=\S+[-])([a-zA-Z-]+)&#39;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span>                 <span class="o">=</span> <span class="n">output_dir</span>
@@ -182,6 +187,13 @@
 <div class="viewcode-block" id="TopicIdentifier.noun_phrase_clustering">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.topic_identifier.TopicIdentifier.noun_phrase_clustering">[docs]</a>
     <span class="k">def</span> <span class="nf">noun_phrase_clustering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk_size</span> <span class="o">=</span> <span class="mi">5000</span><span class="p">,</span> <span class="n">threshold</span>  <span class="o">=</span> <span class="mf">0.80</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Perform noun phrase clustering using community detection.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            chunk_size (int, optional): Size of data chunks for processing. Default is 5000.</span>
+<span class="sd">            threshold (float, optional): Similarity threshold for clustering. Default is 0.80.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">def</span> <span class="nf">get_ids</span><span class="p">(</span><span class="n">cluster</span><span class="p">):</span>                            <span class="k">return</span> <span class="p">[</span><span class="n">transaction</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">transaction</span> <span class="ow">in</span> <span class="n">cluster</span><span class="p">]</span>
         <span class="k">def</span> <span class="nf">get_embeddings</span><span class="p">(</span><span class="n">ids</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">):</span>             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">embeddings</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">])</span>

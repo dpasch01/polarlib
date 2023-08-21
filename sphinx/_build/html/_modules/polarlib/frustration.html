@@ -74,6 +74,20 @@
 <div class="viewcode-block" id="G_to_fi">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.frustration.G_to_fi">[docs]</a>
 <span class="k">def</span> <span class="nf">G_to_fi</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a signed network graph to frustration index related data.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - G (networkx.Graph): Input graph.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - sign_G (networkx.Graph): A graph with nodes and edges representing positive and negative edges.</span>
+<span class="sd">    - adj_sign_G (numpy.matrix): Adjacency matrix of the sign_G graph.</span>
+<span class="sd">    - sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.</span>
+<span class="sd">    - id_to_node (dict): Mapping of node indices to their original names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">nodelist</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
     <span class="n">edgelist</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     
@@ -105,6 +119,21 @@
 <div class="viewcode-block" id="calculate_frustration_index">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.frustration.calculate_frustration_index">[docs]</a>
 <span class="k">def</span> <span class="nf">calculate_frustration_index</span><span class="p">(</span><span class="n">sign_G</span><span class="p">,</span> <span class="n">sign_matrix</span><span class="p">,</span> <span class="n">sign_edgelist</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the frustration index of a signed network graph.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - sign_G (networkx.Graph): Graph with positive and negative edges.</span>
+<span class="sd">    - sign_matrix (numpy.matrix): Matrix representing edge signs.</span>
+<span class="sd">    - sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - f_g (float): Frustration index value.</span>
+<span class="sd">    - rounded_obj_value (float): Rounded objective value.</span>
+<span class="sd">    - solve_time (float): Time taken to solve the optimization model.</span>
+<span class="sd">    - optimal_solution (dict): Optimal variable values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">order</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sign_matrix</span><span class="p">)</span>
     <span class="n">number_of_negative</span> <span class="o">=</span> <span class="p">((</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">sign_matrix</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="mi">2</span>
     <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sign_matrix</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
@@ -190,7 +219,16 @@
 <div class="viewcode-block" id="triadic_balance">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.frustration.triadic_balance">[docs]</a>
 <span class="k">def</span> <span class="nf">triadic_balance</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">triad</span><span class="p">):</span>
-    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the triadic balance of a triad in a signed network graph.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - G (networkx.Graph): Graph containing the triad.</span>
+<span class="sd">    - triad (tuple): Tuple containing nodes of the triad.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - balance_str (str): String representing the triadic balance (+ and - signs).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">plus_str</span><span class="p">,</span> <span class="n">minus_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
     <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">triad</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">G</span><span class="o">.</span><span class="n">get_edge_data</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span> <span class="n">minus_str</span> <span class="o">+=</span> <span class="s1">&#39;-&#39;</span>
@@ -202,6 +240,15 @@
 <div class="viewcode-block" id="calc_triadic_balance">
 <a class="viewcode-back" href="../../polarlib.html#polarlib.frustration.calc_triadic_balance">[docs]</a>
 <span class="k">def</span> <span class="nf">calc_triadic_balance</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the distribution of triadic balances in a signed network graph.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - G (networkx.Graph): Input graph.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - gtb_dict (dict): Dictionary containing the distribution of triadic balances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">gtb_dict</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;+++&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
         <span class="s1">&#39;+--&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>

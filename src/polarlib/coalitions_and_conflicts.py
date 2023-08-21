@@ -796,7 +796,7 @@ class TopicAttitudeCalculator:
 
             if len(dipole_t['atts_fi']) == len(dipole_t['atts_fj']):
                 filtered_topic_attitudes[i]['X']  = dipole_t['atts_fi'] + dipole_t['atts_fj']
-                filtered_topic_attitudes[i]['pi'] = self.calculate_polarization_index(filtered_topic_attitudes[i]['X'])
+                # filtered_topic_attitudes[i]['pi'] = self.calculate_polarization_index(filtered_topic_attitudes[i]['X'])
             else:
 
                 if len(dipole_t['atts_fi']) > len(dipole_t['atts_fj']):
@@ -805,8 +805,8 @@ class TopicAttitudeCalculator:
 
                     filtered_topic_attitudes[i]['X']      = dipole_t['atts_fi'] + dipole_t['atts_fj']
                     filtered_topic_attitudes[i]['X_res']  = dipole_t['atts_fi'] + fj_res
-                    filtered_topic_attitudes[i]['pi']     = self.calculate_polarization_index(filtered_topic_attitudes[i]['X'])
-                    filtered_topic_attitudes[i]['pi_res'] = self.calculate_polarization_index(filtered_topic_attitudes[i]['X_res'])
+                    # filtered_topic_attitudes[i]['pi']     = self.calculate_polarization_index(filtered_topic_attitudes[i]['X'])
+                    # filtered_topic_attitudes[i]['pi_res'] = self.calculate_polarization_index(filtered_topic_attitudes[i]['X_res'])
 
                 else:
 
@@ -814,8 +814,8 @@ class TopicAttitudeCalculator:
 
                     filtered_topic_attitudes[i]['X']      = dipole_t['atts_fi'] + dipole_t['atts_fj']
                     filtered_topic_attitudes[i]['X_res']  = dipole_t['atts_fj'] + fi_res
-                    filtered_topic_attitudes[i]['pi']     = self.calculate_polarization_index(filtered_topic_attitudes[i]['X'])
-                    filtered_topic_attitudes[i]['pi_res'] = self.calculate_polarization_index(filtered_topic_attitudes[i]['X_res'])
+                    # filtered_topic_attitudes[i]['pi']     = self.calculate_polarization_index(filtered_topic_attitudes[i]['X'])
+                    # filtered_topic_attitudes[i]['pi_res'] = self.calculate_polarization_index(filtered_topic_attitudes[i]['X_res'])
 
         self.dipole_topic_attitudes = filtered_topic_attitudes
 
