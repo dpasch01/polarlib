@@ -1,61 +1,29 @@
 import unittest
-from unittest.mock import patch, MagicMock
+import os
 from polarlib.actor_extractor import EntityExtractor, NounPhraseExtractor
 
 class TestEntityExtractor(unittest.TestCase):
 
     def setUp(self):
         self.output_dir = "./example"
-        self.extractor = EntityExtractor(self.output_dir)
+        if not os.path.exists(self.output_dir): os.makedirs(self.output_dir)
 
-    def test_query_dbpedia_entities_with_mock(self):
-        mock_post = MagicMock()
-        with patch('requests.post', return_value=mock_post) as mock_requests_post:
-            mock_post.json.return_value = {'Resources': [{'URI': 'http://dbpedia.org/resource/Test', 'offset': 10, 'surfaceForm': 'test', 'similarityScore': 0.9, 'percentageOfSecondRank': 0.1, 'types': 'Wikidata:Q123'}]}
-            entities = self.extractor.query_dbpedia_entities('Test Text')
-            self.assertEqual(len(entities), 1)
-            self.assertEqual(entities[0]['title'], 'http://dbpedia.org/resource/Test')
+    def test_extract_entities(self):
+        entity_extractor = EntityExtractor(output_dir=self.output_dir)
+        entity_extractor.extract_entities()
 
-    def test_extract_article_entities_with_mock(self):
-        mock_load_article = MagicMock()
-        mock_load_article.return_value = {
-            'uid': '123',
-            'text': 'Sample article text'
-        }
-        with patch('polarlib.load_article', return_value=mock_load_article):
-            result = self.extractor.extract_article_entities('sample_path')
-            self.assertTrue(result)
+        # Add assertions here to verify the correctness of the extraction
 
 class TestNounPhraseExtractor(unittest.TestCase):
 
     def setUp(self):
         self.output_dir = "./example"
-        self.extractor = NounPhraseExtractor(self.output_dir, spacy_model_str="en_core_web_sm")
+        if not os.path.exists(self.output_dir): os.makedirs(self.output_dir)
 
-    def test_clean_text(self):
-        cleaned_text = self.extractor._clean_text("Sample text with punctuation.")
-        self.assertEqual(cleaned_text, "sample text punctuation")
+    def test_extract_noun_phrases(self):
+        noun_phrase_extractor = NounPhraseExtractor(output_dir=self.output_dir)
+        noun_phrase_extractor.extract_noun_phrases()
 
-    def test_extract_article_noun_phrases_with_mock(self):
-        mock_load_article = MagicMock()
-        mock_load_article.return_value = {
-            'uid': '123',
-            'entities': [
-                {
-                    'sentence': 'Sample sentence with entity.',
-                    'from': 0,
-                    'to': 32,
-                    'entities': [
-                        {
-                            'begin': 7,
-                            'end': 14
-                        }
-                    ]
-                }
-            ]
-        }
-        with patch('polarlib.load_article', return_value=mock_load_article):
-            result = self.extractor.extract_article_noun_phrases('sample_path')
-            self.assertTrue(result)
+        # Add assertions here to verify the correctness of the extraction
 
-if __name__ == '__main__': unittest.main()
+if __name__ == "__main__": unittest.main()

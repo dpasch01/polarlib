@@ -1,4 +1,4 @@
-import os, json, string, nltk, re, math, numpy as np, logging, torch
+import os, string, nltk, re, math, logging, torch
 
 from collections import defaultdict
 from joblib import Parallel, delayed
@@ -7,7 +7,7 @@ from torch import Tensor
 import pickle5 as pickle
 
 from tqdm import tqdm
-from utilities import *
+from .utilities import *
 
 from nltk.corpus import stopwords
 from textblob import TextBlob, Word
