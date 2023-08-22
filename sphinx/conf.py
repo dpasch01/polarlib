@@ -13,18 +13,20 @@ sys.path.insert(0, os.path.abspath(".."))
 project = 'POLARLib'
 copyright = '2023, Demetris Paschalides'
 author = 'Demetris Paschalides'
-release = '0.0.1'
+release = '0.0.2'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ["sphinx.ext.todo", "sphinx.ext.viewcode", "sphinx.ext.autodoc", "sphinx.ext.githubpages"]
 
-templates_path = ['templates']
+templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = ('sphinx_rtd_theme')
-html_static_path = ['static']
+html_static_path = ['_static']

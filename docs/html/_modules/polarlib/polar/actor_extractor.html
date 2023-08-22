@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>polarlib.polar.actor_extractor &mdash; POLARLib 0.0.2 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=e3a6060d"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            POLARLib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">polarlib</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">POLARLib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">polarlib.polar.actor_extractor</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for polarlib.polar.actor_extractor</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">spacy</span><span class="o">,</span> <span class="nn">itertools</span><span class="o">,</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">string</span><span class="o">,</span> <span class="nn">nltk</span><span class="o">,</span> <span class="nn">multiprocessing</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">polarlib.utils.utils</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">nltk</span> <span class="kn">import</span> <span class="n">ngrams</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
+
+<span class="kn">from</span> <span class="nn">nltk.corpus</span> <span class="kn">import</span> <span class="n">stopwords</span>
+
+<span class="kn">from</span> <span class="nn">nltk.tokenize</span> <span class="kn">import</span> <span class="n">sent_tokenize</span><span class="p">,</span> <span class="n">word_tokenize</span>
+
+<span class="kn">from</span> <span class="nn">spotlight</span> <span class="kn">import</span> <span class="n">SpotlightException</span>
+
+<span class="kn">from</span> <span class="nn">mosestokenizer</span> <span class="kn">import</span> <span class="n">MosesTokenizer</span><span class="p">,</span> <span class="n">MosesDetokenizer</span>
+
+<div class="viewcode-block" id="EntityExtractor">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.actor_extractor.EntityExtractor">[docs]</a>
+<span class="k">class</span> <span class="nc">EntityExtractor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for extracting entities from articles and querying DBpedia for entity information.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        output_dir (str): The directory where the output data will be stored.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        output_dir (str): The output directory for storing extracted entity data.</span>
+<span class="sd">        article_paths (list): List of article file paths obtained from the &#39;pre_processed&#39; folder.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the EntityExtractor.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_dir (str): The directory where the output data will be stored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span>      <span class="o">=</span> <span class="n">output_dir</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">article_paths</span>   <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">([</span>
+            <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">o1</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">o3</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">o1</span><span class="p">,</span> <span class="n">o2</span><span class="p">,</span> <span class="n">o3</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;pre_processed&#39;</span><span class="p">))</span>
+        <span class="p">]))</span>
+
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;TOKENIZERS_PARALLELISM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;false&#39;</span>
+
+<div class="viewcode-block" id="EntityExtractor.query_dbpedia_entities">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.actor_extractor.EntityExtractor.query_dbpedia_entities">[docs]</a>
+    <span class="k">def</span> <span class="nf">query_dbpedia_entities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">confidence</span><span class="o">=</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">spotlight_url</span><span class="o">=</span><span class="s1">&#39;http://127.0.0.1:2222/rest/annotate&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Query DBpedia Spotlight for entities in the given text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text (str): The input text to query for entities.</span>
+<span class="sd">            confidence (float, optional): Confidence threshold for entity extraction. Defaults to 0.45.</span>
+<span class="sd">            spotlight_url (str, optional): URL of the DBpedia Spotlight service. Defaults to &#39;http://127.0.0.1:2222/rest/annotate&#39;.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list: A list of dictionaries representing extracted entities.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">req_data</span>      <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lang&#39;</span><span class="p">:</span> <span class="s1">&#39;en&#39;</span><span class="p">,</span> <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="s1">&#39;confidence&#39;</span><span class="p">:</span> <span class="n">confidence</span><span class="p">,</span> <span class="s1">&#39;types&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">]}</span>
+        <span class="n">spot_entities</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">spotlight_url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">req_data</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/json&quot;</span><span class="p">})</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;Resources&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">spot_entities</span><span class="o">.</span><span class="n">json</span><span class="p">():</span> <span class="k">raise</span> <span class="n">SpotlightException</span><span class="p">()</span>
+            <span class="n">spot_entities</span> <span class="o">=</span> <span class="p">[{</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">spot_entities</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;Resources&#39;</span><span class="p">]]</span>
+        <span class="k">except</span> <span class="n">SpotlightException</span> <span class="k">as</span> <span class="n">se</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">se</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+
+        <span class="k">return</span> <span class="p">[{</span>
+            <span class="s1">&#39;begin&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">]),</span>
+            <span class="s1">&#39;end&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;offset&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;surfaceForm&#39;</span><span class="p">]),</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;URI&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;score&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;similarityScore&#39;</span><span class="p">]),</span>
+            <span class="s1">&#39;rank&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;percentageOfSecondRank&#39;</span><span class="p">]),</span>
+            <span class="s1">&#39;text&#39;</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;surfaceForm&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;types&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;Wikidata:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;types&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="s1">&#39;Wikidata&#39;</span> <span class="ow">in</span> <span class="n">t</span><span class="p">],</span>
+            <span class="s1">&#39;wikid&#39;</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;URI&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;dbpedia&#39;</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;URI&#39;</span><span class="p">]</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">spot_entities</span><span class="p">]</span>
+
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.250</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EntityExtractor.extract_article_entities">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.actor_extractor.EntityExtractor.extract_article_entities">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_article_entities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract entities from a single article.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): The path to the article file.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool or None: Returns True if extraction is successful, None if an exception occurs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="n">article</span> <span class="o">=</span> <span class="n">load_article</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="n">output_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;entities/&#39;</span> <span class="o">+</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">output_file</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span> <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="n">sentence_list</span> <span class="o">=</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">sentence_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">sent_tokenize</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sentence_list</span><span class="p">]</span>
+            <span class="n">sentence_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="n">sentence_list</span><span class="p">))</span>
+            <span class="n">entity_list</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_dbpedia_entities</span><span class="p">(</span><span class="n">article</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">])</span>
+
+            <span class="n">max_from_i</span><span class="p">,</span> <span class="n">sentence_object_list</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sentence_list</span><span class="p">:</span>
+
+                <span class="n">from_i</span><span class="p">,</span> <span class="n">to_i</span> <span class="o">=</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">][</span><span class="n">max_from_i</span><span class="p">:]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">s</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+                <span class="n">from_i</span>     <span class="o">+=</span> <span class="n">max_from_i</span>
+                <span class="n">to_i</span>       <span class="o">+=</span> <span class="n">from_i</span>
+                <span class="n">max_from_i</span>  <span class="o">=</span> <span class="n">to_i</span>
+
+                <span class="n">sentence_object</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;sentence&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">,</span>
+                    <span class="s2">&quot;from&quot;</span><span class="p">:</span>     <span class="n">from_i</span><span class="p">,</span>
+                    <span class="s2">&quot;to&quot;</span><span class="p">:</span>       <span class="n">to_i</span><span class="p">,</span>
+                    <span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[]</span>
+                <span class="p">}</span>
+
+                <span class="n">s_range_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">from_i</span><span class="p">,</span> <span class="n">to_i</span><span class="p">)))</span>
+
+                <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entity_list</span><span class="p">:</span>
+
+                    <span class="n">e_range_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;begin&#39;</span><span class="p">],</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">])))</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s_range_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">e_range_set</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">sentence_object</span><span class="p">[</span><span class="s1">&#39;entities&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+                <span class="n">sentence_object_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sentence_object</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+            <span class="n">article_dict_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                <span class="s1">&#39;uid&#39;</span><span class="p">:</span> <span class="n">article</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;entities&#39;</span><span class="p">:</span> <span class="n">sentence_object_list</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="p">})</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_folder</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>     <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">article_dict_str</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="EntityExtractor.extract_entities">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.actor_extractor.EntityExtractor.extract_entities">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_entities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract entities from all articles using multiprocessing.</span>
+
+<span class="sd">        This method uses multiprocessing to extract entities from multiple articles concurrently.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extract_article_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">article_paths</span><span class="p">),</span>
+                <span class="n">desc</span>  <span class="o">=</span> <span class="s1">&#39;Identifying Article Entities&#39;</span><span class="p">,</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">article_paths</span><span class="p">)</span>
+        <span class="p">):</span> <span class="k">pass</span>
+
+        <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="NounPhraseExtractor">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.actor_extractor.NounPhraseExtractor">[docs]</a>
+<span class="k">class</span> <span class="nc">NounPhraseExtractor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class for extracting noun phrases from articles.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;brown&#39;</span><span class="p">)</span>
+    <span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;punkt&#39;</span><span class="p">)</span>
+    <span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;averaged_perceptron_tagger&#39;</span><span class="p">)</span>
+    <span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;stopwords&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">spacy_model_str</span><span class="o">=</span><span class="s2">&quot;en_core_web_sm&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the NounPhraseExtractor.</span>
+
+<span class="sd">        :param output_dir: The directory to output the results.</span>
+<span class="sd">        :param spacy_model_str: The Spacy model to use for sentence parsing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_paths</span>  <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span>    <span class="o">=</span> <span class="n">output_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopword_list</span> <span class="o">=</span> <span class="n">stopwords</span><span class="o">.</span><span class="n">words</span><span class="p">(</span><span class="s1">&#39;english&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;&#39;s&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nlp</span>           <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">spacy_model_str</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">folders</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;entities&#39;</span><span class="p">)):</span>
+
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">p</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_clean_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clean and preprocess the given text.</span>
+
+<span class="sd">        :param text: The input text.</span>
+<span class="sd">        :return: Cleaned and preprocessed text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">token_list</span> <span class="o">=</span> <span class="n">word_tokenize</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">token_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">token_list</span> <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">t</span><span class="p">)]</span>
+        <span class="n">token_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">token_list</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopword_list</span><span class="p">]</span>
+        <span class="n">token_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">token_list</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">token_list</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NounPhraseExtractor.extract_article_noun_phrases">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.actor_extractor.NounPhraseExtractor.extract_article_noun_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_article_noun_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract noun phrases from an article.</span>
+
+<span class="sd">        :param path: The path to the article.</span>
+<span class="sd">        :return: True if successful, None otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+
+            <span class="n">entity_object</span> <span class="o">=</span> <span class="n">load_article</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+            <span class="n">output_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;noun_phrases/&#39;</span> <span class="o">+</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+            <span class="n">output_file</span>   <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">entity_object</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_file</span><span class="p">):</span> <span class="k">return</span> <span class="kc">True</span>
+
+            <span class="n">noun_phrase_object</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;uid&#39;</span><span class="p">:</span>          <span class="n">entity_object</span><span class="p">[</span><span class="s1">&#39;uid&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;noun_phrases&#39;</span><span class="p">:</span> <span class="n">entity_object</span><span class="p">[</span><span class="s1">&#39;entities&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="p">}</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">entity_object</span><span class="p">[</span><span class="s1">&#39;entities&#39;</span><span class="p">]):</span>
+
+                <span class="n">s</span><span class="p">[</span><span class="s1">&#39;sentence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;sentence&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+
+                <span class="n">entity_object</span><span class="p">[</span><span class="s1">&#39;entities&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;sentence&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;sentence&#39;</span><span class="p">]</span>
+
+                <span class="n">n_gram_list</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;ngram&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+                        <span class="s2">&quot;from&quot;</span><span class="p">:</span>  <span class="n">np</span><span class="o">.</span><span class="n">start_char</span> <span class="o">+</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;from&#39;</span><span class="p">],</span>
+                        <span class="s2">&quot;to&quot;</span><span class="p">:</span>    <span class="n">np</span><span class="o">.</span><span class="n">end_char</span> <span class="o">+</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;from&#39;</span><span class="p">]</span>
+                    <span class="p">}</span> <span class="k">for</span> <span class="n">np</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nlp</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s1">&#39;sentence&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">noun_chunks</span>
+                <span class="p">]</span>
+
+                <span class="n">n_gram_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">n_gram_list</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clean_text</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;ngram&#39;</span><span class="p">]))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">noun_phrase_object</span><span class="p">[</span><span class="s1">&#39;noun_phrases&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;noun_phrases&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">n_gram_list</span><span class="p">:</span>
+
+                    <span class="n">n_range_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">&#39;from&#39;</span><span class="p">],</span> <span class="n">n</span><span class="p">[</span><span class="s1">&#39;to&#39;</span><span class="p">])))</span>
+
+                    <span class="n">entity_flag</span> <span class="o">=</span> <span class="kc">False</span>
+
+                    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s1">&#39;entities&#39;</span><span class="p">]:</span>
+
+                        <span class="n">e_range_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="s1">&#39;begin&#39;</span><span class="p">],</span> <span class="n">e</span><span class="p">[</span><span class="s1">&#39;end&#39;</span><span class="p">])))</span>
+
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">e_range_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">n_range_set</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">entity_flag</span> <span class="o">=</span> <span class="kc">True</span>
+
+                            <span class="k">break</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">entity_flag</span><span class="p">:</span> <span class="n">noun_phrase_object</span><span class="p">[</span><span class="s1">&#39;noun_phrases&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;noun_phrases&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+            <span class="n">article_dict_str</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">noun_phrase_object</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_folder</span><span class="p">):</span> <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_folder</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>     <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">article_dict_str</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="n">ex</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="NounPhraseExtractor.extract_noun_phrases">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.actor_extractor.NounPhraseExtractor.extract_noun_phrases">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_noun_phrases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract noun phrases from all articles using multiprocessing.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span>
+                <span class="n">pool</span><span class="o">.</span><span class="n">imap_unordered</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extract_article_noun_phrases</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_paths</span><span class="p">),</span>
+                <span class="n">desc</span>  <span class="o">=</span> <span class="s1">&#39;Identifying Article Noun Phrases&#39;</span><span class="p">,</span>
+                <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_paths</span><span class="p">)</span>
+        <span class="p">):</span> <span class="k">pass</span>
+
+        <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_extract_ngrams</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extract n-grams from a given sentence.</span>
+
+<span class="sd">        :param s: The sentence to extract n-grams from.</span>
+<span class="sd">        :param offset: Offset for position indices.</span>
+<span class="sd">        :param n: The n-gram size.</span>
+<span class="sd">        :return: List of extracted n-grams.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ms</span> <span class="o">=</span> <span class="n">MosesTokenizer</span><span class="p">(</span><span class="s1">&#39;en&#39;</span><span class="p">)</span>
+        <span class="n">md</span> <span class="o">=</span> <span class="n">MosesDetokenizer</span><span class="p">(</span><span class="s1">&#39;en&#39;</span><span class="p">)</span>
+
+        <span class="n">token_list</span>  <span class="o">=</span> <span class="n">word_tokenize</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">n_grams</span>     <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ngrams</span><span class="p">(</span><span class="n">token_list</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+        <span class="n">max_from_i</span>  <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_gram_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">grams</span> <span class="ow">in</span> <span class="n">n_grams</span><span class="p">:</span>
+
+            <span class="n">grams</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">grams</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">punctuation</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">grams</span><span class="p">)):</span> <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopword_list</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">grams</span><span class="p">):</span>          <span class="k">continue</span>
+
+            <span class="n">from_i</span><span class="p">,</span> <span class="n">to_i</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">max_from_i</span><span class="p">:]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grams</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">s</span><span class="p">[</span><span class="n">max_from_i</span><span class="p">:]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">grams</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">grams</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="n">from_i</span> <span class="o">+=</span> <span class="n">max_from_i</span>
+            <span class="n">to_i</span> <span class="o">+=</span> <span class="n">from_i</span>
+
+            <span class="n">n_gram_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;ngram&#39;</span><span class="p">:</span> <span class="n">md</span><span class="p">(</span><span class="n">grams</span><span class="p">),</span>
+                <span class="s1">&#39;from&#39;</span><span class="p">:</span>  <span class="n">from_i</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span>
+                <span class="s1">&#39;to&#39;</span><span class="p">:</span>    <span class="n">to_i</span> <span class="o">+</span> <span class="n">offset</span>
+            <span class="p">})</span>
+
+            <span class="n">max_from_i</span> <span class="o">=</span> <span class="n">from_i</span>
+
+        <span class="k">return</span> <span class="n">n_gram_list</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;python -m spacy download en_core_web_sm&quot;&quot;&quot;</span>
+
+    <span class="n">nlp</span> <span class="o">=</span> <span class="n">spacy</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;en_core_web_sm&quot;</span><span class="p">)</span>
+
+    <span class="n">entity_extractor</span> <span class="o">=</span> <span class="n">EntityExtractor</span><span class="p">(</span><span class="n">output_dir</span>   <span class="o">=</span> <span class="s2">&quot;../example&quot;</span><span class="p">)</span>
+
+    <span class="n">entity_extractor</span><span class="o">.</span><span class="n">extract_entities</span><span class="p">()</span>
+
+    <span class="n">noun_phrase_extractor</span> <span class="o">=</span> <span class="n">NounPhraseExtractor</span><span class="p">(</span><span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;../example&quot;</span><span class="p">)</span>
+
+    <span class="n">noun_phrase_extractor</span><span class="o">.</span><span class="n">extract_noun_phrases</span><span class="p">()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Demetris Paschalides.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
