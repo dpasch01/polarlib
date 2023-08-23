@@ -301,16 +301,24 @@ class SentimentAttitudePipeline:
         Returns:
             str: Sentence with replaced entity indices.
         """
-        sorted_entities = sorted(entities, key=lambda x: x[1], reverse=True)
-        reconstructed_sentence = list(sentence)
+        annotations = []
+        sorted_entities = sorted(entities, key=lambda e: e[1])
 
-        for entity, start, end, type in sorted_entities:
-            source = sentence[start:end]
-            target = f"[{type.upper()}]"
+        current_index = 0
 
-            reconstructed_sentence[start:end] = target
+        for entity in sorted_entities:
+            start = entity[1]
+            end   = entity[2]
+            label = entity[3]
 
-        return "".join(reconstructed_sentence)
+            annotations.append(sentence[current_index:start])
+            annotations.append(f"[{label.upper()}]")
+
+            current_index = end
+
+        annotations.append(sentence[current_index:])
+
+        return ''.join(annotations)
 
 if __name__ == "__main__":
 

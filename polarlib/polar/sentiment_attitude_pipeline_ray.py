@@ -66,7 +66,7 @@ class SentimentAttitudePipelineRay:
 
         return _entries.copy()
 
-    def extract_sentiment_attitude(self, path):
+    def prepare_ray_inputs(self, path):
 
         entity_sentence_list      = []
         noun_phrase_sentence_list = []
@@ -122,8 +122,6 @@ class SentimentAttitudePipelineRay:
 
                 entity_sentence_list.append({"pair": list(p_), "sentence": s_, "type": "entity"})
 
-        """noun_phrase_entry['entity_attitudes'] = self.attitude_inference(entity_sentence_list).copy()"""
-
         for i in range(len(noun_phrase_entry['noun_phrases'])):
 
             noun_phrase_entry['noun_phrases'][i]['noun_phrase_attitudes'] = {}
@@ -156,9 +154,10 @@ class SentimentAttitudePipelineRay:
 
                 noun_phrase_sentence_list.append({"pair": list(p_), "sentence": s_, "type": "noun_phrase"})
 
-        """noun_phrase_entry['noun_phrase_attitudes'] = self.attitude_inference(noun_phrase_sentence_list).copy()"""
+        return entity_sentence_list + noun_phrase_sentence_list
 
-        ray_input = entity_sentence_list + noun_phrase_sentence_list
+    def _(self, ray_input, id):
+
         ray_input = [i for i in ray_input if i and i['sentence']]
 
         response = self.attitude_inference_ray(ray_input)
@@ -184,20 +183,27 @@ class SentimentAttitudePipelineRay:
 
                 noun_phrase_predictions[_['pair']].append({t['label']: t['score'] for t in _['attitude']})
 
-        noun_phrase_entry['entity_attitudes']      = entity_predictions.copy()
-        noun_phrase_entry['noun_phrase_attitudes'] = noun_phrase_predictions.copy()
-
-        noun_phrase_entry['attitudes'] = noun_phrase_entry['noun_phrases'].copy()
-        del noun_phrase_entry['noun_phrases']
+        output_folder = os.path.join(self.output_dir, "attitudes/")
+        e_output_file = os.path.join(output_folder, str(id) + '.entity.json')
+        n_output_file = os.path.join(output_folder, str(id) + '.noun_phrase.json')
 
         if not os.path.exists(output_folder): os.makedirs(output_folder, exist_ok=True)
-        with open(output_file, 'wb') as f: pickle.dump(noun_phrase_entry, f)
+        with open(e_output_file, 'wb') as f: pickle.dump(entity_predictions, f)
+        with open(n_output_file, 'wb') as f: pickle.dump(noun_phrase_predictions, f)
 
         return True
 
     def calculate_sentiment_attitudes(self):
 
-        for i, path in enumerate(tqdm(self.noun_phrase_path_list)): self.extract_sentiment_attitude(path)
+        batches = list(to_chunks(self.noun_phrase_path_list, 16))
+
+        for i, batch in enumerate(tqdm(batches)):
+
+            ray_inputs = []
+
+            for p in tqdm(batch): ray_inputs += self.prepare_ray_inputs(p)
+
+            self._(ray_inputs, i)
 
     def _replace_entity_indices(self, sentence, entities):
         """
@@ -210,16 +216,24 @@ class SentimentAttitudePipelineRay:
         Returns:
             str: Sentence with replaced entity indices.
         """
-        sorted_entities = sorted(entities, key=lambda x: x[1], reverse=True)
-        reconstructed_sentence = list(sentence)
+        annotations = []
+        sorted_entities = sorted(entities, key=lambda e: e[1])
 
-        for entity, start, end, type in sorted_entities:
-            source = sentence[start:end]
-            target = f"[{type.upper()}]"
+        current_index = 0
 
-            reconstructed_sentence[start:end] = target
+        for entity in sorted_entities:
+            start = entity[1]
+            end   = entity[2]
+            label = entity[3]
 
-        return "".join(reconstructed_sentence)
+            annotations.append(sentence[current_index:start])
+            annotations.append(f"[{label.upper()}]")
+
+            current_index = end
+
+        annotations.append(sentence[current_index:])
+
+        return ''.join(annotations)
 
 if __name__ == "__main__":
 
