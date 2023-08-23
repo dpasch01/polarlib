@@ -40,7 +40,8 @@ class SentimentAttitudePipeline:
             output_dir,
             model: AutoModelForSequenceClassification,
             tokenizer: AutoModelForSequenceClassification,
-            training_args: TrainingArguments
+            training_args: TrainingArguments,
+            device='cpu'
     ):
         """
         Initialize the SentimentAttitudePipeline.
@@ -53,7 +54,7 @@ class SentimentAttitudePipeline:
 
         self.training_args = training_args
 
-        self.model.cuda()
+        if device == 'cuda': self.model.cuda()
 
         self.trainer      =  Trainer(
             model         = self.model,
@@ -68,7 +69,7 @@ class SentimentAttitudePipeline:
             model             = self.model,
             tokenizer         = self.tokenizer,
             top_k             = None,
-            device            = 0
+            device            = 0 if device == 'cuda' else None
         )
 
         self.noun_phrase_path_list = []
