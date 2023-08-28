@@ -1,18 +1,21 @@
-import os, spacy, itertools, requests, time, string, nltk, multiprocessing, sys, os
+from multiprocessing import Pool
+
+import itertools
+import multiprocessing
+import nltk
+import os
+import requests
+import spacy
+import string
+from mosestokenizer import MosesTokenizer, MosesDetokenizer
+from nltk import ngrams
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize, word_tokenize
+from spotlight import SpotlightException
+from tqdm import tqdm
 
 from polarlib.utils.utils import *
 
-from tqdm import tqdm
-from nltk import ngrams
-from multiprocessing import Pool
-
-from nltk.corpus import stopwords
-
-from nltk.tokenize import sent_tokenize, word_tokenize
-
-from spotlight import SpotlightException
-
-from mosestokenizer import MosesTokenizer, MosesDetokenizer
 
 class EntityExtractor:
     """
@@ -75,8 +78,6 @@ class EntityExtractor:
             'wikid': e['URI'],
             'dbpedia': e['URI']
         } for e in spot_entities]
-
-        time.sleep(0.250)
 
     def extract_article_entities(self, path):
         """

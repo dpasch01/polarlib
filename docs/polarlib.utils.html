@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>polarlib.utils package &mdash; POLARLib 0.0.2 documentation</title>
+  <title>polarlib.utils package &mdash; PolarLib 0.0.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -13,7 +13,7 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=e3a6060d"></script>
+        <script src="_static/documentation_options.js?v=1fd71caa"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -31,7 +31,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            POLARLib
+            PolarLib
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -66,7 +66,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">POLARLib</a>
+          <a href="index.html">PolarLib</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -94,19 +94,80 @@
 <section id="polarlib-utils-utils-module">
 <h2>polarlib.utils.utils module<a class="headerlink" href="#polarlib-utils-utils-module" title="Link to this heading"></a></h2>
 <dl class="py function" id="module-polarlib.utils.utils">
+<dt class="sig sig-object py" id="polarlib.utils.utils.find_longest_unique_subsequences">
+<span class="sig-prename descclassname"><span class="pre">polarlib.utils.utils.</span></span><span class="sig-name descname"><span class="pre">find_longest_unique_subsequences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/utils/utils.html#find_longest_unique_subsequences"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.utils.utils.find_longest_unique_subsequences" title="Link to this definition"></a></dt>
+<dd><p>Find the longest unique subsequences in a list of lists.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>input_list (list): A list containing lists as elements.</p>
+</dd>
+<dt>Returns:</dt><dd><p>list: List of longest unique subsequences from the input list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="polarlib.utils.utils.is_subsequence">
+<span class="sig-prename descclassname"><span class="pre">polarlib.utils.utils.</span></span><span class="sig-name descname"><span class="pre">is_subsequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/utils/utils.html#is_subsequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.utils.utils.is_subsequence" title="Link to this definition"></a></dt>
+<dd><p>Check if a list is a subsequence of another list.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>sub (list): The potential subsequence.
+seq (list): The sequence to check.</p>
+</dd>
+<dt>Returns:</dt><dd><p>bool: True if ‘sub’ is a subsequence of ‘seq’, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="polarlib.utils.utils.jaccard_index">
 <span class="sig-prename descclassname"><span class="pre">polarlib.utils.utils.</span></span><span class="sig-name descname"><span class="pre">jaccard_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/utils/utils.html#jaccard_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.utils.utils.jaccard_index" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Calculate the Jaccard index between two sets.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>s1 (set or list): First set or list.
+s2 (set or list): Second set or list.</p>
+</dd>
+<dt>Returns:</dt><dd><p>float: Jaccard index value between the two sets.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="polarlib.utils.utils.load_article">
 <span class="sig-prename descclassname"><span class="pre">polarlib.utils.utils.</span></span><span class="sig-name descname"><span class="pre">load_article</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func=&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/utils/utils.html#load_article"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.utils.utils.load_article" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Load an article from a JSON file.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>path (str): Path to the JSON file containing the article data.
+func (function, optional): A function to process the file object. Default is to use json.loads(json.load(t)).</p>
+</dd>
+<dt>Returns:</dt><dd><p>dict: The loaded article data as a dictionary.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="polarlib.utils.utils.sentiment_threshold_difference">
+<span class="sig-prename descclassname"><span class="pre">polarlib.utils.utils.</span></span><span class="sig-name descname"><span class="pre">sentiment_threshold_difference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">swn_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swn_neg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/utils/utils.html#sentiment_threshold_difference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.utils.utils.sentiment_threshold_difference" title="Link to this definition"></a></dt>
+<dd><p>Calculate the sentiment threshold difference using SentiWordNet scores.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>swn_pos (float): Positive sentiment score from SentiWordNet.
+swn_neg (float): Negative sentiment score from SentiWordNet.</p>
+</dd>
+<dt>Returns:</dt><dd><p>float: Sentiment threshold difference value.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="polarlib.utils.utils.to_chunks">
 <span class="sig-prename descclassname"><span class="pre">polarlib.utils.utils.</span></span><span class="sig-name descname"><span class="pre">to_chunks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/utils/utils.html#to_chunks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.utils.utils.to_chunks" title="Link to this definition"></a></dt>
-<dd><p>Yield successive n-sized chunks from lst.</p>
+<dd><p>Split a list into chunks of a specified size.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>lst (list): The input list to be split.
+n (int): The size of each chunk.</p>
+</dd>
+<dt>Yields:</dt><dd><p>list: A chunk of the input list with the specified size.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>

@@ -1,6 +1,14 @@
 polarlib.polar package
 ======================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   polarlib.polar.attitude
+
 Submodules
 ----------
 
@@ -40,14 +48,6 @@ polarlib.polar.sag\_generator module
 ------------------------------------
 
 .. automodule:: polarlib.polar.sag_generator
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-polarlib.polar.sentiment\_attitude\_pipeline module
----------------------------------------------------
-
-.. automodule:: polarlib.polar.sentiment_attitude_pipeline
    :members:
    :undoc-members:
    :show-inheritance:

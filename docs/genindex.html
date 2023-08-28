@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; POLARLib 0.0.2 documentation</title>
+  <title>Index &mdash; PolarLib 0.0.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -12,7 +12,7 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=e3a6060d"></script>
+        <script src="_static/documentation_options.js?v=1fd71caa"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
@@ -29,7 +29,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            POLARLib
+            PolarLib
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -50,7 +50,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">POLARLib</a>
+          <a href="index.html">PolarLib</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -97,7 +97,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="polarlib.polar.html#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.attitude_inference">attitude_inference() (polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.attitude_inference">attitude_inference() (polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -107,18 +107,26 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.frustration.calc_triadic_balance">calc_triadic_balance() (in module polarlib.polar.frustration)</a>
 </li>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.calculate_attitude">calculate_attitude() (polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline method)</a>
+</li>
       <li><a href="polarlib.polar.html#polarlib.polar.sag_generator.SAGGenerator.calculate_attitude_buckets">calculate_attitude_buckets() (polarlib.polar.sag_generator.SAGGenerator method)</a>
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.calculate_frustration">calculate_frustration() (polarlib.polar.coalitions_and_conflicts.DipoleGenerator method)</a>
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.frustration.calculate_frustration_index">calculate_frustration_index() (in module polarlib.polar.frustration)</a>
 </li>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.calculate_mpqa">calculate_mpqa() (polarlib.polar.attitude.mpqa.mpqa method)</a>
+</li>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.calculate_polarization_index">calculate_polarization_index() (polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="polarlib.polar.html#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.calculate_sentiment_attitudes">calculate_sentiment_attitudes() (polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.calculate_sentiment_attitudes">calculate_sentiment_attitudes() (polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+
+      <ul>
+        <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.calculate_sentiment_attitudes">(polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline method)</a>
 </li>
+      </ul></li>
       <li><a href="polarlib.polar.html#polarlib.polar.news_corpus_collector.NewsCorpusCollector.collect_archives">collect_archives() (polarlib.polar.news_corpus_collector.NewsCorpusCollector method)</a>
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.news_corpus_collector.NewsCorpusCollector.collect_articles">collect_articles() (polarlib.polar.news_corpus_collector.NewsCorpusCollector method)</a>
@@ -126,6 +134,8 @@
       <li><a href="polarlib.polar.html#polarlib.polar.sag_generator.SAGGenerator.construct_sag">construct_sag() (polarlib.polar.sag_generator.SAGGenerator method)</a>
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.sag_generator.SAGGenerator.convert_attitude_signs">convert_attitude_signs() (polarlib.polar.sag_generator.SAGGenerator method)</a>
+</li>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.convert_to_mpqa_pos">convert_to_mpqa_pos() (polarlib.polar.attitude.mpqa.mpqa method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -151,10 +161,10 @@
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.extract_dipole">extract_dipole() (polarlib.polar.coalitions_and_conflicts.DipoleGenerator method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.extract_dipole_topics">extract_dipole_topics() (polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.actor_extractor.EntityExtractor.extract_entities">extract_entities() (polarlib.polar.actor_extractor.EntityExtractor method)</a>
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.FellowshipExtractor.extract_fellowships">extract_fellowships() (polarlib.polar.coalitions_and_conflicts.FellowshipExtractor method)</a>
@@ -163,8 +173,12 @@
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.actor_extractor.NounPhraseExtractor.extract_noun_phrases">extract_noun_phrases() (polarlib.polar.actor_extractor.NounPhraseExtractor method)</a>
 </li>
-      <li><a href="polarlib.polar.html#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.extract_sentiment_attitude">extract_sentiment_attitude() (polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.extract_sentiment_attitude">extract_sentiment_attitude() (polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+
+      <ul>
+        <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.extract_sentiment_attitude">(polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline method)</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -172,6 +186,14 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.FellowshipExtractor">FellowshipExtractor (class in polarlib.polar.coalitions_and_conflicts)</a>
+</li>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.find_dependency_paths">find_dependency_paths() (polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.find_longest_unique_path">find_longest_unique_path() (polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline method)</a>
+</li>
+      <li><a href="polarlib.utils.html#polarlib.utils.utils.find_longest_unique_subsequences">find_longest_unique_subsequences() (in module polarlib.utils.utils)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -185,13 +207,15 @@
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.get_connected_fellowships">get_connected_fellowships() (polarlib.polar.coalitions_and_conflicts.DipoleGenerator method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.get_fellowship_graphs">get_fellowship_graphs() (polarlib.polar.coalitions_and_conflicts.DipoleGenerator method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.get_polarization_topics">get_polarization_topics() (polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator method)</a>
 </li>
-      <li><a href="polarlib.polar.html#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.get_raw_attitude">get_raw_attitude() (polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.get_raw_attitude">get_raw_attitude() (polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+</li>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.get_token_indices">get_token_indices() (polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline method)</a>
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.get_topic_attitudes">get_topic_attitudes() (polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator method)</a>
 </li>
@@ -202,6 +226,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.InsufficientSignedEdgesException">InsufficientSignedEdgesException</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="polarlib.utils.html#polarlib.utils.utils.is_subsequence">is_subsequence() (in module polarlib.utils.utils)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -218,6 +246,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.utils.html#polarlib.utils.utils.load_article">load_article() (in module polarlib.utils.utils)</a>
+</li>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.load_mpqa">load_mpqa() (polarlib.polar.attitude.mpqa.mpqa method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -245,6 +275,14 @@
 </li>
         <li><a href="polarlib.polar.html#module-polarlib.polar.actor_extractor">polarlib.polar.actor_extractor</a>
 </li>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude">polarlib.polar.attitude</a>
+</li>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude.mpqa">polarlib.polar.attitude.mpqa</a>
+</li>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude.sentiment_attitude_pipeline">polarlib.polar.attitude.sentiment_attitude_pipeline</a>
+</li>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude.syntactical_sentiment_attitude">polarlib.polar.attitude.syntactical_sentiment_attitude</a>
+</li>
         <li><a href="polarlib.polar.html#module-polarlib.polar.coalitions_and_conflicts">polarlib.polar.coalitions_and_conflicts</a>
 </li>
         <li><a href="polarlib.polar.html#module-polarlib.polar.frustration">polarlib.polar.frustration</a>
@@ -252,8 +290,6 @@
         <li><a href="polarlib.polar.html#module-polarlib.polar.news_corpus_collector">polarlib.polar.news_corpus_collector</a>
 </li>
         <li><a href="polarlib.polar.html#module-polarlib.polar.sag_generator">polarlib.polar.sag_generator</a>
-</li>
-        <li><a href="polarlib.polar.html#module-polarlib.polar.sentiment_attitude_pipeline">polarlib.polar.sentiment_attitude_pipeline</a>
 </li>
         <li><a href="polarlib.polar.html#module-polarlib.polar.topic_identifier">polarlib.polar.topic_identifier</a>
 </li>
@@ -264,6 +300,10 @@
         <li><a href="polarlib.utils.html#module-polarlib.utils.utils">polarlib.utils.utils</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa">mpqa (class in polarlib.polar.attitude.mpqa)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -315,6 +355,36 @@
 </li>
       </ul></li>
       <li>
+    polarlib.polar.attitude
+
+      <ul>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude">module</a>
+</li>
+      </ul></li>
+      <li>
+    polarlib.polar.attitude.mpqa
+
+      <ul>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude.mpqa">module</a>
+</li>
+      </ul></li>
+      <li>
+    polarlib.polar.attitude.sentiment_attitude_pipeline
+
+      <ul>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude.sentiment_attitude_pipeline">module</a>
+</li>
+      </ul></li>
+      <li>
+    polarlib.polar.attitude.syntactical_sentiment_attitude
+
+      <ul>
+        <li><a href="polarlib.polar.attitude.html#module-polarlib.polar.attitude.syntactical_sentiment_attitude">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
     polarlib.polar.coalitions_and_conflicts
 
       <ul>
@@ -335,20 +405,11 @@
         <li><a href="polarlib.polar.html#module-polarlib.polar.news_corpus_collector">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     polarlib.polar.sag_generator
 
       <ul>
         <li><a href="polarlib.polar.html#module-polarlib.polar.sag_generator">module</a>
-</li>
-      </ul></li>
-      <li>
-    polarlib.polar.sentiment_attitude_pipeline
-
-      <ul>
-        <li><a href="polarlib.polar.html#module-polarlib.polar.sentiment_attitude_pipeline">module</a>
 </li>
       </ul></li>
       <li>
@@ -413,11 +474,15 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.polar.html#polarlib.polar.sag_generator.SAGGenerator">SAGGenerator (class in polarlib.polar.sag_generator)</a>
 </li>
+      <li><a href="polarlib.utils.html#polarlib.utils.utils.sentiment_threshold_difference">sentiment_threshold_difference() (in module polarlib.utils.utils)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="polarlib.polar.html#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline">SentimentAttitudePipeline (class in polarlib.polar.sentiment_attitude_pipeline)</a>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline">SentimentAttitudePipeline (class in polarlib.polar.attitude.sentiment_attitude_pipeline)</a>
 </li>
       <li><a href="polarlib.polar.html#polarlib.polar.coalitions_and_conflicts.FellowshipExtractor.signed_network_clustering">signed_network_clustering() (polarlib.polar.coalitions_and_conflicts.FellowshipExtractor method)</a>
+</li>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline">SyntacticalSentimentAttitudePipeline (class in polarlib.polar.attitude.syntactical_sentiment_attitude)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -427,7 +492,7 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="polarlib.utils.html#polarlib.utils.utils.to_chunks">to_chunks() (in module polarlib.utils.utils)</a>
 </li>
-      <li><a href="polarlib.polar.html#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.tokenize">tokenize() (polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
+      <li><a href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.tokenize">tokenize() (polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>

@@ -1,9 +1,7 @@
-import spacy
-
+from polarlib.polar.attitude.syntactical_sentiment_attitude import SyntacticalSentimentAttitudePipeline
 from polarlib.polar.news_corpus_collector import *
 from polarlib.polar.actor_extractor import *
 from polarlib.polar.topic_identifier import *
-from polarlib.polar.sentiment_attitude_pipeline import *
 from polarlib.polar.coalitions_and_conflicts import *
 from polarlib.polar.sag_generator import *
 
@@ -19,8 +17,8 @@ if __name__ == "__main__":
 
     corpus_collector = NewsCorpusCollector(
         output_dir   = output_dir,
-        from_date    = date(year = 2023, month = 8, day = 15),
-        to_date      = date(year = 2023, month = 8, day = 15),
+        from_date    = date(year = 2023, month = 8, day = 1),
+        to_date      = date(year = 2023, month = 8, day = 25),
         keywords     = keywords
     )
 
@@ -52,38 +50,12 @@ if __name__ == "__main__":
     # Sentiment Attitude Classification #
     #####################################
 
-    batch_size                  = 8
-    gradient_accumulation_steps = 4
-    logging_steps               = 10
+    nlp = spacy.load("en_core_web_sm")
 
-    training_args = TrainingArguments(
-        output_dir                  = '../.cache',
-        weight_decay                = 0.02,
-        learning_rate               = 1e-5,
-        evaluation_strategy         = "epoch",
-        save_strategy               = 'epoch',
-        num_train_epochs            = 10,
-        logging_steps               = logging_steps,
-        load_best_model_at_end      = True,
-        save_total_limit            = 2,
-        per_device_train_batch_size = batch_size,
-        per_device_eval_batch_size  = batch_size,
-        gradient_accumulation_steps = gradient_accumulation_steps,
-        disable_tqdm                = True
-    )
-
-    model_path = "/home/dpasch01/notebooks/Sentiment Attitude Classification/models/roberta-base-sentiment-attitude/pretrained"
-
-    model_name = 'roberta-base'
-
-    tokenizer  = AutoTokenizer.from_pretrained(model_name)
-    model      = AutoModelForSequenceClassification.from_pretrained(model_path)
-
-    sentiment_attitude_pipeline = SentimentAttitudePipeline(
-        output_dir    = output_dir,
-        model         = model,
-        tokenizer     = tokenizer,
-        training_args = training_args
+    sentiment_attitude_pipeline = SyntacticalSentimentAttitudePipeline(
+        output_dir  = output_dir,
+        nlp         = nlp,
+        mpqa_path   = "../Sentiment Attitude Classification/subjectivity_clues_hltemnlp05/subjclueslen1-HLTEMNLP05.tff"
     )
 
     sentiment_attitude_pipeline.calculate_sentiment_attitudes()

@@ -33,7 +33,7 @@ class SAGGenerator:
         """
         with open(path, 'rb') as f: attidute_object = pickle.load(f)
 
-        return attidute_object['entity_attitudes']
+        return attidute_object['attitudes']
 
     def load_sentiment_attitudes(self):
         """
@@ -46,14 +46,25 @@ class SAGGenerator:
                 desc  = 'Fetching Attitudes',
                 total = len(self.attitude_path_list)
         ):
-            for p in result:
+            for r in result:
 
-                if p not in self.pair_sentiment_attitude_dict: self.pair_sentiment_attitude_dict[p] = []
-                self.pair_sentiment_attitude_dict[p] += [
-                    0 if t['NEUTRAL'] > t['NEGATIVE'] and t['NEUTRAL'] > t['POSITIVE'] else \
-                         t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] and t['POSITIVE'] > t['NEUTRAL'] else \
-                        -t['NEGATIVE'] for t in result[p]
-                ]
+                r = r['entity_attitudes']
+
+                for p in r:
+
+                    if p not in self.pair_sentiment_attitude_dict: self.pair_sentiment_attitude_dict[p] = []
+
+                    if len(r[p]) > 0 and not isinstance(r[p][0], float):
+
+                        self.pair_sentiment_attitude_dict[p] += [
+                            0 if t['NEUTRAL'] > t['NEGATIVE'] and t['NEUTRAL'] > t['POSITIVE'] else \
+                                 t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] and t['POSITIVE'] > t['NEUTRAL'] else \
+                                -t['NEGATIVE'] for t in r[p]
+                        ]
+
+                    else:
+
+                        self.pair_sentiment_attitude_dict[p] += r[p]
 
         pool.close()
         pool.join()

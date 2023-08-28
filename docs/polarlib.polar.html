@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>polarlib.polar package &mdash; POLARLib 0.0.2 documentation</title>
+  <title>polarlib.polar package &mdash; PolarLib 0.0.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -13,13 +13,13 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="_static/documentation_options.js?v=e3a6060d"></script>
+        <script src="_static/documentation_options.js?v=1fd71caa"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
         <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="polarlib.prism package" href="polarlib.prism.html" />
+    <link rel="next" title="polarlib.polar.attitude package" href="polarlib.polar.attitude.html" />
     <link rel="prev" title="polarlib package" href="polarlib.html" /> 
 </head>
 
@@ -32,7 +32,7 @@
           
           
           <a href="index.html" class="icon icon-home">
-            POLARLib
+            PolarLib
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -67,7 +67,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">POLARLib</a>
+          <a href="index.html">PolarLib</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -89,6 +89,50 @@
              
   <section id="polarlib-polar-package">
 <h1>polarlib.polar package<a class="headerlink" href="#polarlib-polar-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="polarlib.polar.attitude.html">polarlib.polar.attitude package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib-polar-attitude-mpqa-module">polarlib.polar.attitude.mpqa module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa"><code class="docutils literal notranslate"><span class="pre">mpqa</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.calculate_mpqa"><code class="docutils literal notranslate"><span class="pre">mpqa.calculate_mpqa()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.convert_to_mpqa_pos"><code class="docutils literal notranslate"><span class="pre">mpqa.convert_to_mpqa_pos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.load_mpqa"><code class="docutils literal notranslate"><span class="pre">mpqa.load_mpqa()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib-polar-attitude-sentiment-attitude-pipeline-module">polarlib.polar.attitude.sentiment_attitude_pipeline module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.attitude_inference"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.attitude_inference()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.calculate_sentiment_attitudes"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.calculate_sentiment_attitudes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.extract_sentiment_attitude"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.extract_sentiment_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.get_raw_attitude"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.get_raw_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.tokenize"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.tokenize()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib-polar-attitude-syntactical-sentiment-attitude-module">polarlib.polar.attitude.syntactical_sentiment_attitude module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.calculate_attitude"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.calculate_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.calculate_sentiment_attitudes"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.calculate_sentiment_attitudes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.extract_sentiment_attitude"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.extract_sentiment_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.find_dependency_paths"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.find_dependency_paths()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.find_longest_unique_path"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.find_longest_unique_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.get_token_indices"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.get_token_indices()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
@@ -479,6 +523,10 @@ node_to_int (dict): Mapping of node names to integer node indices.</p>
 </ul>
 </dd>
 </dl>
+<dl class="simple">
+<dt>Args:</dt><dd><p>n_articles:</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -610,87 +658,6 @@ node_to_int (dict): Mapping of node names to integer node indices.</p>
 </dd></dl>
 
 </section>
-<section id="polarlib-polar-sentiment-attitude-pipeline-module">
-<h2>polarlib.polar.sentiment_attitude_pipeline module<a class="headerlink" href="#polarlib-polar-sentiment-attitude-pipeline-module" title="Link to this heading"></a></h2>
-<dl class="py class" id="module-polarlib.polar.sentiment_attitude_pipeline">
-<dt class="sig sig-object py" id="polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.sentiment_attitude_pipeline.</span></span><span class="sig-name descname"><span class="pre">SentimentAttitudePipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AutoModelForSequenceClassification</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokenizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AutoModelForSequenceClassification</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TrainingArguments</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sentiment_attitude_pipeline.html#SentimentAttitudePipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Pipeline for sentiment and attitude analysis using a trained model.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>output_dir (str): The output directory for storing results.
-model (AutoModelForSequenceClassification): The pre-trained model for sentiment classification.
-tokenizer (AutoModelForSequenceClassification): The tokenizer associated with the model.
-training_args (TrainingArguments): Arguments for training the model.</p>
-</dd>
-<dt>Attributes:</dt><dd><p>output_dir (str): The output directory for storing results.
-model (AutoModelForSequenceClassification): The pre-trained model for sentiment classification.
-tokenizer (AutoModelForSequenceClassification): The tokenizer associated with the model.
-label_to_int (dict): Mapping of sentiment labels to integer values.
-int_to_label (dict): Mapping of integer values to sentiment labels.
-training_args (TrainingArguments): Arguments for training the model.
-trainer (Trainer): Trainer object for model evaluation.
-model_pipeline (TextClassificationPipeline): Text classification pipeline for inference.
-noun_phrase_path_list (list): List of paths to noun phrase files.</p>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.attitude_inference">
-<span class="sig-name descname"><span class="pre">attitude_inference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_sentence_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sentiment_attitude_pipeline.html#SentimentAttitudePipeline.attitude_inference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.attitude_inference" title="Link to this definition"></a></dt>
-<dd><p>Perform attitude inference for a list of entity-sentence pairs.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>entity_sentence_list (list): List of entity-sentence pairs.</p>
-</dd>
-<dt>Returns:</dt><dd><p>dict: Dictionary containing attitude predictions.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.calculate_sentiment_attitudes">
-<span class="sig-name descname"><span class="pre">calculate_sentiment_attitudes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sentiment_attitude_pipeline.html#SentimentAttitudePipeline.calculate_sentiment_attitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.calculate_sentiment_attitudes" title="Link to this definition"></a></dt>
-<dd><p>Calculate sentiment attitudes for a list of noun phrase paths.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.extract_sentiment_attitude">
-<span class="sig-name descname"><span class="pre">extract_sentiment_attitude</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sentiment_attitude_pipeline.html#SentimentAttitudePipeline.extract_sentiment_attitude"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.extract_sentiment_attitude" title="Link to this definition"></a></dt>
-<dd><p>Extract sentiment and attitude information from a given file.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>path (str): Path to the input file.</p>
-</dd>
-<dt>Returns:</dt><dd><p>bool: True if extraction is successful, False otherwise.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.get_raw_attitude">
-<span class="sig-name descname"><span class="pre">get_raw_attitude</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">anonymized</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sentiment_attitude_pipeline.html#SentimentAttitudePipeline.get_raw_attitude"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.get_raw_attitude" title="Link to this definition"></a></dt>
-<dd><p>Get raw attitude predictions for an anonymized sentence.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>anonymized (str): Anonymized input sentence.</p>
-</dd>
-<dt>Returns:</dt><dd><p>list: List of attitude predictions.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.tokenize">
-<span class="sig-name descname"><span class="pre">tokenize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sentiment_attitude_pipeline.html#SentimentAttitudePipeline.tokenize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sentiment_attitude_pipeline.SentimentAttitudePipeline.tokenize" title="Link to this definition"></a></dt>
-<dd><p>Tokenize a batch of text data.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><p>batch (dict): Batch of input data containing “text” field.</p>
-</dd>
-<dt>Returns:</dt><dd><p>dict: Tokenized batch.</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
 <section id="polarlib-polar-topic-identifier-module">
 <h2>polarlib.polar.topic_identifier module<a class="headerlink" href="#polarlib-polar-topic-identifier-module" title="Link to this heading"></a></h2>
 <dl class="py class" id="module-polarlib.polar.topic_identifier">
@@ -726,7 +693,7 @@ threshold (float, optional): Similarity threshold for clustering. Default is 0.8
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="polarlib.html" class="btn btn-neutral float-left" title="polarlib package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="polarlib.prism.html" class="btn btn-neutral float-right" title="polarlib.prism package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="polarlib.polar.attitude.html" class="btn btn-neutral float-right" title="polarlib.polar.attitude package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

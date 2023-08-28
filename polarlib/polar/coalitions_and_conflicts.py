@@ -345,6 +345,8 @@ class DipoleGenerator:
 
                 for neighbor in self.sag.neighbors(node):
 
+                    if not neighbor in community_membership: continue
+
                     if community_membership[neighbor] != community_membership[node]:
 
                         if (node, neighbor) in edge_set or (neighbor, node) in edge_set:
@@ -653,21 +655,31 @@ class TopicAttitudeCalculator:
                 desc='Fetching Attitudes',
                 total=len(self.attitude_path_list)
         ):
-            for p in result:
+            for r in result:
 
-                if p[1] not in self.clean_np_dict: break
+                r = r['noun_phrase_attitudes']
 
-                if p[0] not in self.entity_np_sentiment_attitudes: self.entity_np_sentiment_attitudes[p[0]] = {}
+                for p in r:
 
-                c = self.clean_np_dict[p[1]]
+                    if p[1] not in self.clean_np_dict: break
 
-                if c not in self.entity_np_sentiment_attitudes[p[0]]: self.entity_np_sentiment_attitudes[p[0]][c] = []
+                    if p[0] not in self.entity_np_sentiment_attitudes: self.entity_np_sentiment_attitudes[p[0]] = {}
 
-                self.entity_np_sentiment_attitudes[p[0]][c] += [
-                    0 if t['NEUTRAL'] > t['NEGATIVE'] and t['NEUTRAL'] > t['POSITIVE'] else \
-                         t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] and t['POSITIVE'] > t['NEUTRAL'] else \
-                        -t['NEGATIVE'] for t in result[p]
-                ]
+                    c = self.clean_np_dict[p[1]]
+
+                    if c not in self.entity_np_sentiment_attitudes[p[0]]: self.entity_np_sentiment_attitudes[p[0]][c] = []
+
+                    if len(r[p]) > 0 and not isinstance(r[p][0], float):
+
+                        self.entity_np_sentiment_attitudes[p[0]][c] += [
+                            0 if t['NEUTRAL'] > t['NEGATIVE'] and t['NEUTRAL'] > t['POSITIVE'] else \
+                                 t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] and t['POSITIVE'] > t['NEUTRAL'] else \
+                                -t['NEGATIVE'] for t in result[p]
+                        ]
+
+                    else:
+
+                        self.entity_np_sentiment_attitudes[p[0]][c] += r[p]
 
         pool.close()
         pool.join()
@@ -681,7 +693,7 @@ class TopicAttitudeCalculator:
         """
         with open(path, 'rb') as f: attidute_object = pickle.load(f)
 
-        return attidute_object['noun_phrase_attitudes']
+        return attidute_object['attitudes']
 
     def extract_dipole_topics(self, dipole_tuple):
         """

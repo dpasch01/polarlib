@@ -14,6 +14,7 @@ from nltk.corpus import stopwords
 from textblob import TextBlob
 from sentence_transformers import SentenceTransformer
 
+
 class TopicIdentifier:
 
     def __init__(self, output_dir):
@@ -25,11 +26,11 @@ class TopicIdentifier:
         """
         self.hyphen_regex = r'(?=\S+[-])([a-zA-Z-]+)'
 
-        self.output_dir                 = output_dir
-        self.noun_phrase_path_list      = []
-        self.english_stopwords          = stopwords.words('english')
-        self.clean_noun_phrase_list     = None
-        self.encoded_noun_phrase_list   = None
+        self.output_dir = output_dir
+        self.noun_phrase_path_list = []
+        self.english_stopwords = stopwords.words('english')
+        self.clean_noun_phrase_list = None
+        self.encoded_noun_phrase_list = None
         self.noun_phrase_embedding_dict = {}
 
         self.model = SentenceTransformer('all-mpnet-base-v2')
@@ -45,17 +46,27 @@ class TopicIdentifier:
             noun_phrase_entry = load_article(path)['noun_phrases']
 
             for entry in noun_phrase_entry:
-
                 self.noun_phrase_list += [np['ngram'] for np in entry['noun_phrases']]
 
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-    def _tokenize(self, text):              return nltk.word_tokenize(text)
-    def _remove_trailing(self, text):       return text.strip()
-    def _reduce_white_space(self, text):    return re.sub(' +', ' ', text)
-    def _to_lower_case(self, text):         return text.lower()
-    def _remove_stopwords(self, tokens):    return [t for t in tokens if t not in self.english_stopwords]
-    def _remove_digit_tokens(self, tokens): return [t for t in tokens if not all(c.isdigit() for c in t)]
+    def _tokenize(self, text):
+        return nltk.word_tokenize(text)
+
+    def _remove_trailing(self, text):
+        return text.strip()
+
+    def _reduce_white_space(self, text):
+        return re.sub(' +', ' ', text)
+
+    def _to_lower_case(self, text):
+        return text.lower()
+
+    def _remove_stopwords(self, tokens):
+        return [t for t in tokens if t not in self.english_stopwords]
+
+    def _remove_digit_tokens(self, tokens):
+        return [t for t in tokens if not all(c.isdigit() for c in t)]
 
     def _remove_punctuation(self, text):
         _text = []
@@ -74,8 +85,8 @@ class TopicIdentifier:
         return ' '.join(_text)
 
     def _lemmatize(self, np):
-        blob          = TextBlob(np)
-        tag_dict      = {"J": 'a', "N": 'n', "V": 'v', "R": 'r'}
+        blob = TextBlob(np)
+        tag_dict = {"J": 'a', "N": 'n', "V": 'v', "R": 'r'}
         word_tag_list = [(w, tag_dict.get(pos[0], 'n')) for w, pos in blob.tags]
 
         return " ".join([w.lemmatize(t) for w, t in word_tag_list])
@@ -107,9 +118,10 @@ class TopicIdentifier:
             batch_size=128
         )
 
-        for i, np in enumerate(self.noun_phrase_list):  self.noun_phrase_embedding_dict[np] = self.encoded_noun_phrase_list[i]
+        for i, np in enumerate(self.noun_phrase_list):  self.noun_phrase_embedding_dict[np] = \
+        self.encoded_noun_phrase_list[i]
 
-    def noun_phrase_clustering(self, chunk_size = 5000, threshold  = 0.80):
+    def noun_phrase_clustering(self, chunk_size=5000, threshold=0.80):
         """
         Perform noun phrase clustering using community detection.
 
@@ -118,14 +130,29 @@ class TopicIdentifier:
             threshold (float, optional): Similarity threshold for clustering. Default is 0.80.
         """
 
-        def get_ids(cluster):                            return [transaction[0] for transaction in cluster]
-        def get_embeddings(ids, embeddings):             return np.array([embeddings[idx] for idx in ids])
-        def get_clusters_ids(clusters):                  return list(clusters.keys())
-        def sort_clusters(clusters):                     return dict(sorted(clusters.items(), key=lambda x: len(x[1]), reverse=True))
-        def sort_cluster(cluster):                       return list(sorted(cluster, key=lambda x: x[1], reverse=True))
-        def filter_clusters(clusters, min_cluster_size): return {k: v for k, v in clusters.items() if len(v) >= min_cluster_size}
-        def unique(collection):                          return list(dict.fromkeys(collection))
-        def get_ids(cluster):                            return [transaction[0] for transaction in cluster]
+        def get_ids(cluster):
+            return [transaction[0] for transaction in cluster]
+
+        def get_embeddings(ids, embeddings):
+            return np.array([embeddings[idx] for idx in ids])
+
+        def get_clusters_ids(clusters):
+            return list(clusters.keys())
+
+        def sort_clusters(clusters):
+            return dict(sorted(clusters.items(), key=lambda x: len(x[1]), reverse=True))
+
+        def sort_cluster(cluster):
+            return list(sorted(cluster, key=lambda x: x[1], reverse=True))
+
+        def filter_clusters(clusters, min_cluster_size):
+            return {k: v for k, v in clusters.items() if len(v) >= min_cluster_size}
+
+        def unique(collection):
+            return list(dict.fromkeys(collection))
+
+        def get_ids(cluster):
+            return [transaction[0] for transaction in cluster]
 
         def cos_sim(a: Tensor, b: Tensor):
             """
@@ -198,13 +225,13 @@ class TopicIdentifier:
         def online_community_detection(
                 ids,
                 embeddings,
-                clusters         = None,
-                threshold        = 0.7,
-                min_cluster_size = 3,
-                chunk_size       = 2500,
-                iterations       = 10,
-                cores            = 1,
-                verbose          = False
+                clusters=None,
+                threshold=0.7,
+                min_cluster_size=3,
+                chunk_size=2500,
+                iterations=10,
+                cores=1,
+                verbose=False
         ):
             if clusters is None: clusters = {}
 
@@ -316,7 +343,8 @@ class TopicIdentifier:
 
             return clusters
 
-        def create_clusters(ids, embeddings, clusters=None, parallel=None, min_cluster_size=3, threshold=0.75, chunk_size=2500):
+        def create_clusters(ids, embeddings, clusters=None, parallel=None, min_cluster_size=3, threshold=0.75,
+                            chunk_size=2500):
             to_cluster_ids = np.array(ids)
             np.random.shuffle(to_cluster_ids)
 
@@ -404,7 +432,8 @@ class TopicIdentifier:
 
             return new_clusters
 
-        _noun_phrase_embedding_dict = {i: self.noun_phrase_embedding_dict[np] for i, np in enumerate(self.noun_phrase_list)}
+        _noun_phrase_embedding_dict = {i: self.noun_phrase_embedding_dict[np] for i, np in
+                                       enumerate(self.noun_phrase_list)}
 
         print('=>', len(_noun_phrase_embedding_dict))
 
@@ -414,22 +443,23 @@ class TopicIdentifier:
             range(len(self.noun_phrase_list)),
             _noun_phrase_embedding_dict,
             clusters,
-            chunk_size = 5000,
-            threshold  = 0.80
+            chunk_size=5000,
+            threshold=0.80
         )
 
         topical_clusters = {
             f"t{k}": {
-                "noun_phrases":      [self.noun_phrase_list[t[0]] for t in v],
-                "pre_processed":     [self.clean_noun_phrase_list[t[0]] for t in v],
+                "noun_phrases": [self.noun_phrase_list[t[0]] for t in v],
+                "pre_processed": [self.clean_noun_phrase_list[t[0]] for t in v],
                 "similarity_scores": [float(t[1]) for t in v],
             } for k, v in tqdm(list(clusters.items()))
         }
 
-        with open(os.path.join(self.output_dir, 'topics.json'), 'w') as f: json.dump(topical_clusters, f)
+        with open(os.path.join(self.output_dir, 'topics.json'), 'w') as f:
+            json.dump(topical_clusters, f)
+
 
 if __name__ == "__main__":
-
     """python -m textblob.download_corpora"""
 
     topic_identifier = TopicIdentifier(output_dir="../example")

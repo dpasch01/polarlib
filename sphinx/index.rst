@@ -1,9 +1,9 @@
-.. POLARLib documentation master file, created by
-   sphinx-quickstart on Tue Aug 22 08:45:16 2023.
+.. PolarLib documentation master file, created by
+   sphinx-quickstart on Mon Aug 28 08:20:29 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to POLARLib's documentation!
+Welcome to PolarLib's documentation!
 ====================================
 
 .. toctree::
@@ -11,7 +11,6 @@ Welcome to POLARLib's documentation!
    :caption: Contents:
 
    modules
-
 
 Indices and tables
 ==================

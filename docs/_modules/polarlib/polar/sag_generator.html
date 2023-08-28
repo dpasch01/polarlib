@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>polarlib.polar.sag_generator &mdash; POLARLib 0.0.2 documentation</title>
+  <title>polarlib.polar.sag_generator &mdash; PolarLib 0.0.6 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -12,7 +12,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=e3a6060d"></script>
+        <script src="../../../_static/documentation_options.js?v=1fd71caa"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -29,7 +29,7 @@
           
           
           <a href="../../../index.html" class="icon icon-home">
-            POLARLib
+            PolarLib
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -50,7 +50,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">POLARLib</a>
+          <a href="../../../index.html">PolarLib</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -106,7 +106,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">attidute_object</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">attidute_object</span><span class="p">[</span><span class="s1">&#39;entity_attitudes&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">attidute_object</span><span class="p">[</span><span class="s1">&#39;attitudes&#39;</span><span class="p">]</span>
 
 <div class="viewcode-block" id="SAGGenerator.load_sentiment_attitudes">
 <a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.sag_generator.SAGGenerator.load_sentiment_attitudes">[docs]</a>
@@ -121,14 +121,25 @@
                 <span class="n">desc</span>  <span class="o">=</span> <span class="s1">&#39;Fetching Attitudes&#39;</span><span class="p">,</span>
                 <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attitude_path_list</span><span class="p">)</span>
         <span class="p">):</span>
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
 
-                <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span>
-                    <span class="mi">0</span> <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEUTRAL&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEGATIVE&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEUTRAL&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="k">else</span> \
-                         <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEGATIVE&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEUTRAL&#39;</span><span class="p">]</span> <span class="k">else</span> \
-                        <span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEGATIVE&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">result</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
-                <span class="p">]</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s1">&#39;entity_attitudes&#39;</span><span class="p">]</span>
+
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">r</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">p</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="n">p</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">float</span><span class="p">):</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span>
+                            <span class="mi">0</span> <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEUTRAL&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEGATIVE&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEUTRAL&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="k">else</span> \
+                                 <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEGATIVE&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;POSITIVE&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEUTRAL&#39;</span><span class="p">]</span> <span class="k">else</span> \
+                                <span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="s1">&#39;NEGATIVE&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+                        <span class="p">]</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">pair_sentiment_attitude_dict</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">+=</span> <span class="n">r</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
 
         <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>

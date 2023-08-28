@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>polarlib.utils.utils &mdash; POLARLib 0.0.2 documentation</title>
+  <title>polarlib.utils.utils &mdash; PolarLib 0.0.6 documentation</title>
       <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -12,7 +12,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=e3a6060d"></script>
+        <script src="../../../_static/documentation_options.js?v=1fd71caa"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -29,7 +29,7 @@
           
           
           <a href="../../../index.html" class="icon icon-home">
-            POLARLib
+            PolarLib
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -50,7 +50,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">POLARLib</a>
+          <a href="../../../index.html">PolarLib</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -69,26 +69,124 @@
            <div itemprop="articleBody">
              
   <h1>Source code for polarlib.utils.utils</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span></span><span class="kn">import</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">numpy</span>
+
 
 <div class="viewcode-block" id="load_article">
 <a class="viewcode-back" href="../../../polarlib.utils.html#polarlib.utils.utils.load_article">[docs]</a>
 <span class="k">def</span> <span class="nf">load_article</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">t</span><span class="p">))):</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">article_obj</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load an article from a JSON file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): Path to the JSON file containing the article data.</span>
+<span class="sd">        func (function, optional): A function to process the file object. Default is to use json.loads(json.load(t)).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: The loaded article data as a dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+
+        <span class="n">article_obj</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">article_obj</span></div>
+
 
 
 <div class="viewcode-block" id="jaccard_index">
 <a class="viewcode-back" href="../../../polarlib.utils.html#polarlib.utils.utils.jaccard_index">[docs]</a>
-<span class="k">def</span> <span class="nf">jaccard_index</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span> <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s2</span><span class="p">)))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s2</span><span class="p">)))</span></div>
+<span class="k">def</span> <span class="nf">jaccard_index</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the Jaccard index between two sets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        s1 (set or list): First set or list.</span>
+<span class="sd">        s2 (set or list): Second set or list.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Jaccard index value between the two sets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s2</span><span class="p">)))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">s2</span><span class="p">)))</span></div>
+
 
 
 <div class="viewcode-block" id="to_chunks">
 <a class="viewcode-back" href="../../../polarlib.utils.html#polarlib.utils.utils.to_chunks">[docs]</a>
 <span class="k">def</span> <span class="nf">to_chunks</span><span class="p">(</span><span class="n">lst</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yield successive n-sized chunks from lst.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split a list into chunks of a specified size.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        lst (list): The input list to be split.</span>
+<span class="sd">        n (int): The size of each chunk.</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        list: A chunk of the input list with the specified size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">),</span> <span class="n">n</span><span class="p">):</span>
+
         <span class="k">yield</span> <span class="n">lst</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">n</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="is_subsequence">
+<a class="viewcode-back" href="../../../polarlib.utils.html#polarlib.utils.utils.is_subsequence">[docs]</a>
+<span class="k">def</span> <span class="nf">is_subsequence</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">seq</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if a list is a subsequence of another list.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sub (list): The potential subsequence.</span>
+<span class="sd">        seq (list): The sequence to check.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if &#39;sub&#39; is a subsequence of &#39;seq&#39;, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">it</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">c</span> <span class="ow">in</span> <span class="n">it</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">sub</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="find_longest_unique_subsequences">
+<a class="viewcode-back" href="../../../polarlib.utils.html#polarlib.utils.utils.find_longest_unique_subsequences">[docs]</a>
+<span class="k">def</span> <span class="nf">find_longest_unique_subsequences</span><span class="p">(</span><span class="n">input_list</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the longest unique subsequences in a list of lists.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_list (list): A list containing lists as elements.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: List of longest unique subsequences from the input list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">input_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">unique_subsequences</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">sublist</span> <span class="ow">in</span> <span class="n">input_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">is_subsequence</span><span class="p">(</span><span class="n">sublist</span><span class="p">,</span> <span class="n">existing</span><span class="p">)</span> <span class="k">for</span> <span class="n">existing</span> <span class="ow">in</span> <span class="n">unique_subsequences</span><span class="p">):</span>
+            <span class="n">unique_subsequences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sublist</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">unique_subsequences</span></div>
+
+
+
+<div class="viewcode-block" id="sentiment_threshold_difference">
+<a class="viewcode-back" href="../../../polarlib.utils.html#polarlib.utils.utils.sentiment_threshold_difference">[docs]</a>
+<span class="k">def</span> <span class="nf">sentiment_threshold_difference</span><span class="p">(</span><span class="n">swn_pos</span><span class="p">,</span> <span class="n">swn_neg</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the sentiment threshold difference using SentiWordNet scores.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        swn_pos (float): Positive sentiment score from SentiWordNet.</span>
+<span class="sd">        swn_neg (float): Negative sentiment score from SentiWordNet.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: Sentiment threshold difference value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">swn_pos</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">swn_pos</span><span class="p">)</span>
+    <span class="n">swn_neg</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">swn_neg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">swn_pos</span> <span class="o">-</span> <span class="n">swn_neg</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">swn_pos</span> <span class="o">-</span> <span class="n">swn_neg</span><span class="p">))</span></div>
 
 </pre></div>
 

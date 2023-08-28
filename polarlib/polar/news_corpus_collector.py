@@ -21,6 +21,7 @@ GDELT_FIELDS = [
     'actiongeo_adm1code', 'actiongeo_lat', 'actiongeo_long', 'actiongeo_featureid', 'dateadded', 'sourceurl'
 ]
 
+
 class URLKeywordExtractor:
 
     def __init__(self, url_list):
@@ -32,12 +33,11 @@ class URLKeywordExtractor:
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
         self.url_list = url_list
-        self.model    = KeyBERT()
+        self.model = KeyBERT()
 
-        self.texts    = []
+        self.texts = []
 
         for url in tqdm(self.url_list):
-
             article = Article(url)
 
             article.download()
@@ -60,6 +60,7 @@ class URLKeywordExtractor:
 
         return [k[0] for k in keyword_list]
 
+
 class NewsCorpusCollector:
 
     def __init__(self, output_dir, from_date, to_date, keywords):
@@ -72,22 +73,23 @@ class NewsCorpusCollector:
         :param keywords: List of keywords for filtering articles.
         """
         self.output_dir = output_dir
-        self.from_date  = from_date
-        self.to_date    = to_date
-        self.duration   = self.to_date - self.from_date
-        self.duration   = self.duration.days + 1
-        self.keywords   = keywords
+        self.from_date = from_date
+        self.to_date = to_date
+        self.duration = self.to_date - self.from_date
+        self.duration = self.duration.days + 1
+        self.keywords = keywords
 
-        if os.path.isdir(self.output_dir): print('Warning: Path \'%s\' already exists.' % self.output_dir)
+        if os.path.isdir(self.output_dir):
+            print('Warning: Path \'%s\' already exists.' % self.output_dir)
         else:
             os.makedirs(self.output_dir)
             os.makedirs(os.path.join(self.output_dir, 'dumps'))
             os.makedirs(os.path.join(self.output_dir, 'html'))
             os.makedirs(os.path.join(self.output_dir, 'articles'))
 
-        self.config                    = Config()
+        self.config = Config()
         self.config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
-        self.config.request_timeout    = 3
+        self.config.request_timeout = 3
 
     def collect_archives(self):
         """
@@ -132,8 +134,10 @@ class NewsCorpusCollector:
         :param archive_flag: Flag to determine if archiving is used.
         :return: Query URL.
         """
-        if archive_flag: return 'https://web.archive.org/web/' + str(gd_day) + '00000/' + url
-        else: return url
+        if archive_flag:
+            return 'https://web.archive.org/web/' + str(gd_day) + '00000/' + url
+        else:
+            return url
 
     def _format_title(self, s):
         """
@@ -232,15 +236,16 @@ class NewsCorpusCollector:
         return text
 
     def pre_process_articles(self):
-        article_paths = [os.path.join(self.output_dir, 'articles/' + p + '/') for p in sorted(os.listdir(os.path.join(self.output_dir, 'articles/')))]
+        article_paths = [os.path.join(self.output_dir, 'articles/' + p + '/') for p in
+                         sorted(os.listdir(os.path.join(self.output_dir, 'articles/')))]
         article_paths = list(itertools.chain.from_iterable([[p + _ for _ in os.listdir(p)] for p in article_paths]))
 
         pool = Pool(multiprocessing.cpu_count())
 
         for i in tqdm(
                 pool.imap_unordered(self.pre_process_article, article_paths),
-                desc  = 'Article Pre-processing',
-                total = len(article_paths)
+                desc='Article Pre-processing',
+                total=len(article_paths)
         ): pass
 
         pool.close()
@@ -258,13 +263,16 @@ class NewsCorpusCollector:
 
         hgd['config_day'] = hgd['d_str']
 
-        try: article_obj = self.retrieve_article(archive_url, parse_flag=False)
+        try:
+            article_obj = self.retrieve_article(archive_url, parse_flag=False)
         except Exception as ex:
             print(idx, archive_url, ex)
             return
 
         output_folder = os.path.join(self.output_dir, 'html/' + str(hgd['config_day']))
-        output_file = os.path.join(output_folder, hgd['source'] + '.' + self._format_title(self._get_link_source_path(archive_url))[:100] + '.html')
+        output_file = os.path.join(output_folder,
+                                   hgd['source'] + '.' + self._format_title(self._get_link_source_path(archive_url))[
+                                                         :100] + '.html')
 
         os.makedirs(output_folder, exist_ok=True)
         with open(output_file, 'w') as html_file:
@@ -274,9 +282,9 @@ class NewsCorpusCollector:
 
     def collect_articles(
             self,
-            actor1countrycode = 'USA',
-            actor2countrycode = 'USA',
-            n_articles        = 1000
+            actor1countrycode='USA',
+            actor2countrycode='USA',
+            n_articles=1000
     ):
         """
         Collect articles from GDELT archives and store them.
@@ -285,19 +293,22 @@ class NewsCorpusCollector:
         :param actor2countrycode: Actor 2 country code.
         :param n_threads: Number of threads for parallel processing.
         :param use_web_archive: Flag to use web archiving.
+
+        Args:
+            n_articles:
         """
 
         for i in range(self.duration):
 
-            d     = self.from_date + timedelta(days=i)
+            d = self.from_date + timedelta(days=i)
             d_str = d.strftime('%Y%m%d')
-            zf    = zipfile.ZipFile('{}{}.export.CSV.zip'.format(os.path.join(self.output_dir, 'dumps/'), d_str))
+            zf = zipfile.ZipFile('{}{}.export.CSV.zip'.format(os.path.join(self.output_dir, 'dumps/'), d_str))
 
-            gd_df         = pd.read_csv(zf.open('{}.export.CSV'.format(d_str)), sep='\t', header=None)
+            gd_df = pd.read_csv(zf.open('{}.export.CSV'.format(d_str)), sep='\t', header=None)
             gd_df.columns = GDELT_FIELDS
 
             gd_df['sourceurl_path'] = gd_df['sourceurl'].apply(self._get_link_source_path)
-            gd_df['source']         = gd_df['sourceurl'].apply(self._get_link_source)
+            gd_df['source'] = gd_df['sourceurl'].apply(self._get_link_source)
 
             #######################################
             # Here add your filters for the GDELT #
@@ -305,7 +316,8 @@ class NewsCorpusCollector:
             # articles to be related to the US.   #
             #######################################
 
-            scope_df = gd_df[((gd_df['actor1countrycode'] == actor1countrycode) | (gd_df['actor2countrycode'] == actor2countrycode))]
+            scope_df = gd_df[
+                ((gd_df['actor1countrycode'] == actor1countrycode) | (gd_df['actor2countrycode'] == actor2countrycode))]
 
             scope_df['n_keywords'] = scope_df['sourceurl_path'].str.findall('|'.join(self.keywords)).apply(len)
 
@@ -324,7 +336,7 @@ class NewsCorpusCollector:
             scope_df = scope_df.iloc[:n_articles]
 
             article_n = len(set(scope_df['sourceurl'].values))
-            scope_df  = list(scope_df.T.to_dict().values())
+            scope_df = list(scope_df.T.to_dict().values())
 
             sys.stdout.write('- Fetching {} articles for: {}'.format(article_n, d.strftime('%Y %m %d')))
             sys.stdout.flush()
@@ -339,8 +351,8 @@ class NewsCorpusCollector:
 
             for i in tqdm(
                     pool.imap_unordered(self.article_collection_process, _),
-                    desc  = 'Fetching Article HTML',
-                    total = len(_)
+                    desc='Fetching Article HTML',
+                    total=len(_)
             ): pass
 
             pool.close()
@@ -355,7 +367,7 @@ class NewsCorpusCollector:
         file_paths = []
 
         for i in tqdm(list(range(self.duration))):
-            d     = self.from_date + timedelta(days=i)
+            d = self.from_date + timedelta(days=i)
             d_str = d.strftime('%Y%m%d')
 
             daily_path = os.path.join(self.output_dir, 'html/' + d_str + '/')
@@ -366,8 +378,8 @@ class NewsCorpusCollector:
 
         for i in tqdm(
                 pool.imap_unordered(self.parse_html, file_paths),
-                desc  = 'HTML Parsing',
-                total = len(file_paths)
+                desc='HTML Parsing',
+                total=len(file_paths)
         ): pass
 
         pool.close()
@@ -380,7 +392,8 @@ class NewsCorpusCollector:
         :param file_path: Path to the HTML file.
         :return: True if parsing is successful.
         """
-        with open(file_path, 'r') as f: html_content = f.read()
+        with open(file_path, 'r') as f:
+            html_content = f.read()
 
         hgd = file_path.split('/')[-2]
         uid = file_path.split('/')[-1].replace('.html', '')
@@ -394,42 +407,44 @@ class NewsCorpusCollector:
         hgd_dt = datetime.strptime(hgd, '%Y%m%d')
 
         article_dict = {
-            'url':              article.url,
-            'uid':              uid,
-            'images':           list(article.images),
-            'publication-date': article.publish_date.strftime('%Y-%m-%d') if article.publish_date else hgd_dt.strftime('%Y-%m-%d'),
-            'text':             article.text,
-            'title':            article.title,
-            'top-image':        article.top_image
+            'url': article.url,
+            'uid': uid,
+            'images': list(article.images),
+            'publication-date': article.publish_date.strftime('%Y-%m-%d') if article.publish_date else hgd_dt.strftime(
+                '%Y-%m-%d'),
+            'text': article.text,
+            'title': article.title,
+            'top-image': article.top_image
         }
 
         article_dict_str = json.dumps(article_dict, indent=4)
 
         output_folder = os.path.join(self.output_dir, 'articles/' + hgd + '/')
-        output_file   = os.path.join(output_folder, uid + '.json')
+        output_file = os.path.join(output_folder, uid + '.json')
 
         if not os.path.exists(output_folder): os.makedirs(output_folder, exist_ok=True)
 
-        with open(output_file, 'w') as html_file: html_file.write(article_dict_str)
+        with open(output_file, 'w') as html_file:
+            html_file.write(article_dict_str)
 
         return True
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     keyword_extractor = URLKeywordExtractor(
         url_list=[
             'https://www.businessinsider.com/everything-you-need-to-know-about-chat-gpt-2023-1'
         ]
-     )
+    )
 
-    keywords         = keyword_extractor.extract_keywords(n=20)
-    keywords         = ["openai", "gpt"]
+    keywords = keyword_extractor.extract_keywords(n=20)
+    keywords = ["openai", "gpt"]
 
     corpus_collector = NewsCorpusCollector(
-        output_dir   = "./example",
-        from_date    = date(year = 2023, month = 8, day = 15),
-        to_date      = date(year = 2023, month = 8, day = 15),
-        keywords     = keywords
+        output_dir="./example",
+        from_date=date(year=2023, month=8, day=15),
+        to_date=date(year=2023, month=8, day=15),
+        keywords=keywords
     )
 
     corpus_collector.collect_archives()
