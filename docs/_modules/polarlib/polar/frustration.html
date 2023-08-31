@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>polarlib.polar.frustration &mdash; PolarLib 0.0.6 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=1fd71caa"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            PolarLib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">polarlib</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PolarLib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">polarlib.polar.frustration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for polarlib.polar.frustration</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span><span class="o">,</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">itertools</span>
+
+
+<div class="viewcode-block" id="G_to_fi">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.frustration.G_to_fi">[docs]</a>
+<span class="k">def</span> <span class="nf">G_to_fi</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a signed network graph to frustration index related data.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - G (networkx.Graph): Input graph.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - sign_G (networkx.Graph): A graph with nodes and edges representing positive and negative edges.</span>
+<span class="sd">    - adj_sign_G (numpy.matrix): Adjacency matrix of the sign_G graph.</span>
+<span class="sd">    - sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.</span>
+<span class="sd">    - id_to_node (dict): Mapping of node indices to their original names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">nodelist</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+    <span class="n">edgelist</span> <span class="o">=</span> <span class="n">G</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">node_to_id</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nodelist</span><span class="p">)):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">nodelist</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">node_to_id</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="n">id_to_node</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">n</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">node_to_id</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="n">pos_edgelist</span> <span class="o">=</span> <span class="p">[(</span><span class="n">node_to_id</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">node_to_id</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">{</span><span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">edgelist</span><span class="p">)</span> <span class="k">if</span> <span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">]</span>
+    <span class="n">neg_edgelist</span> <span class="o">=</span> <span class="p">[(</span><span class="n">node_to_id</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">node_to_id</span><span class="p">[</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">{</span><span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">})</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">edgelist</span><span class="p">)</span> <span class="k">if</span>
+                    <span class="n">e</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">]</span>
+
+    <span class="n">sign_G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+    <span class="n">sign_G</span><span class="o">.</span><span class="n">add_nodes_from</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">node_to_id</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="n">sign_G</span><span class="o">.</span><span class="n">add_edges_from</span><span class="p">(</span><span class="n">pos_edgelist</span> <span class="o">+</span> <span class="n">neg_edgelist</span><span class="p">)</span>
+
+    <span class="n">adj_sign_G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">adjacency_matrix</span><span class="p">(</span><span class="n">sign_G</span><span class="p">,</span> <span class="n">nodelist</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">node_to_id</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;adj_unsign_G = abs(nx.adjacency_matrix(sign_G, nodelist=list(node_to_id.values()))).todense()&quot;&quot;&quot;</span>
+
+    <span class="n">sign_edgelist</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">get_edge_attributes</span><span class="p">(</span><span class="n">sign_G</span><span class="p">,</span> <span class="s1">&#39;weight&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sign_G</span><span class="p">,</span> <span class="n">adj_sign_G</span><span class="p">,</span> <span class="n">sign_edgelist</span><span class="p">,</span> <span class="n">id_to_node</span></div>
+
+
+
+<span class="kn">from</span> <span class="nn">gurobipy</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+
+
+<div class="viewcode-block" id="calculate_frustration_index">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.frustration.calculate_frustration_index">[docs]</a>
+<span class="k">def</span> <span class="nf">calculate_frustration_index</span><span class="p">(</span><span class="n">sign_G</span><span class="p">,</span> <span class="n">sign_matrix</span><span class="p">,</span> <span class="n">sign_edgelist</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the frustration index of a signed network graph.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - sign_G (networkx.Graph): Graph with positive and negative edges.</span>
+<span class="sd">    - sign_matrix (numpy.matrix): Matrix representing edge signs.</span>
+<span class="sd">    - sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - f_g (float): Frustration index value.</span>
+<span class="sd">    - rounded_obj_value (float): Rounded objective value.</span>
+<span class="sd">    - solve_time (float): Time taken to solve the optimization model.</span>
+<span class="sd">    - optimal_solution (dict): Optimal variable values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">order</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sign_matrix</span><span class="p">)</span>
+    <span class="n">number_of_negative</span> <span class="o">=</span> <span class="p">((</span><span class="o">-</span><span class="mi">1</span> <span class="o">==</span> <span class="n">sign_matrix</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">sign_matrix</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">neighbors</span><span class="p">,</span> <span class="n">degree</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sign_G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+        <span class="n">neighbors</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sign_G</span><span class="p">[</span><span class="n">u</span><span class="p">])</span>
+        <span class="n">degree</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">neighbors</span><span class="p">[</span><span class="n">u</span><span class="p">]))</span>
+
+    <span class="n">unsigned_degree</span> <span class="o">=</span> <span class="n">degree</span>
+
+    <span class="n">maximum_degree</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">unsigned_degree</span><span class="p">)</span>
+    <span class="p">[</span><span class="n">node_to_fix</span><span class="p">]</span> <span class="o">=</span> <span class="p">[([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">unsigned_degree</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">maximum_degree</span><span class="p">])</span><span class="o">.</span><span class="n">pop</span><span class="p">()]</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;Continuous model for lower-bounding frustration index&quot;</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">setParam</span><span class="p">(</span><span class="n">GRB</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">OutputFlag</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">setParam</span><span class="p">(</span><span class="n">GRB</span><span class="o">.</span><span class="n">param</span><span class="o">.</span><span class="n">Method</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">setParam</span><span class="p">(</span><span class="n">GRB</span><span class="o">.</span><span class="n">Param</span><span class="o">.</span><span class="n">Crossover</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">setParam</span><span class="p">(</span><span class="s1">&#39;TimeLimit&#39;</span><span class="p">,</span> <span class="mi">10</span> <span class="o">*</span> <span class="mi">3600</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">setParam</span><span class="p">(</span><span class="n">GRB</span><span class="o">.</span><span class="n">Param</span><span class="o">.</span><span class="n">Threads</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()))</span>
+
+    <span class="n">graph_triangles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n1</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">sign_G</span><span class="o">.</span><span class="n">nodes</span><span class="p">()):</span>
+        <span class="n">neighbors1</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sign_G</span><span class="p">[</span><span class="n">n1</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">n2</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">n1</span><span class="p">,</span> <span class="n">neighbors1</span><span class="p">):</span>
+            <span class="n">neighbors2</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sign_G</span><span class="p">[</span><span class="n">n2</span><span class="p">])</span>
+            <span class="n">common</span> <span class="o">=</span> <span class="n">neighbors1</span> <span class="o">&amp;</span> <span class="n">neighbors2</span>
+            <span class="k">for</span> <span class="n">n3</span> <span class="ow">in</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">n2</span><span class="p">,</span> <span class="n">common</span><span class="p">):</span> <span class="n">graph_triangles</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">n3</span><span class="p">])</span>
+
+    <span class="n">z</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span> <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span><span class="n">lb</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vtype</span><span class="o">=</span><span class="n">GRB</span><span class="o">.</span><span class="n">CONTINUOUS</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="n">sign_edgelist</span><span class="p">):</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">addVar</span><span class="p">(</span>
+        <span class="n">lb</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">ub</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">vtype</span><span class="o">=</span><span class="n">GRB</span><span class="o">.</span><span class="n">CONTINUOUS</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;z&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="n">OFV</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="n">sign_edgelist</span><span class="p">):</span>
+        <span class="n">OFV</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">sign_edgelist</span><span class="p">)[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)])</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">((</span><span class="n">sign_edgelist</span><span class="p">)[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)])</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)])</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">setObjective</span><span class="p">(</span><span class="n">OFV</span><span class="p">,</span> <span class="n">GRB</span><span class="o">.</span><span class="n">MINIMIZE</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="n">sign_edgelist</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">sign_edgelist</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;Edge positive&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sign_edgelist</span><span class="p">)[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">&gt;=</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Edge negative&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">triangle</span> <span class="ow">in</span> <span class="n">graph_triangles</span><span class="p">:</span>
+        <span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">triangle</span>
+
+        <span class="n">model</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">)]</span> <span class="o">&gt;=</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">)],</span>
+                        <span class="s1">&#39;triangle1&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">)]</span> <span class="o">&gt;=</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">)],</span>
+                        <span class="s1">&#39;triangle2&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">&gt;=</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">)]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">)],</span>
+                        <span class="s1">&#39;triangle3&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">)]</span> <span class="o">+</span> <span class="n">z</span><span class="p">[(</span><span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">)]</span> <span class="o">&gt;=</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">x</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
+                        <span class="s1">&#39;triangle4&#39;</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">addConstr</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">node_to_fix</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;1stnodecolour&#39;</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">optimize</span><span class="p">()</span>
+    <span class="n">solve_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
+
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">getObjective</span><span class="p">()</span>
+
+    <span class="n">optimal_solution</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="p">{}}</span>
+
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">getVars</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s1">&#39;x&#39;</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">varName</span><span class="p">:</span>
+            <span class="n">optimal_solution</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">][</span><span class="n">v</span><span class="o">.</span><span class="n">varName</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">x</span>
+        <span class="k">elif</span> <span class="s1">&#39;z&#39;</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">varName</span><span class="p">:</span>
+            <span class="n">optimal_solution</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">][</span><span class="n">v</span><span class="o">.</span><span class="n">varName</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">x</span>
+
+    <span class="n">f_g</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">getValue</span><span class="p">())</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">sign_edgelist</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sign_edgelist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
+    <span class="k">return</span> <span class="n">f_g</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">getValue</span><span class="p">()),</span> <span class="n">solve_time</span><span class="p">,</span> <span class="n">optimal_solution</span></div>
+
+
+
+<div class="viewcode-block" id="triadic_balance">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.frustration.triadic_balance">[docs]</a>
+<span class="k">def</span> <span class="nf">triadic_balance</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">triad</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the triadic balance of a triad in a signed network graph.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - G (networkx.Graph): Graph containing the triad.</span>
+<span class="sd">    - triad (tuple): Tuple containing nodes of the triad.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - balance_str (str): String representing the triadic balance (+ and - signs).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plus_str</span><span class="p">,</span> <span class="n">minus_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">triad</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">G</span><span class="o">.</span><span class="n">get_edge_data</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="s1">&#39;weight&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="n">minus_str</span> <span class="o">+=</span> <span class="s1">&#39;-&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">plus_str</span> <span class="o">+=</span> <span class="s1">&#39;+&#39;</span>
+
+    <span class="k">return</span> <span class="n">plus_str</span> <span class="o">+</span> <span class="n">minus_str</span></div>
+
+
+
+<div class="viewcode-block" id="calc_triadic_balance">
+<a class="viewcode-back" href="../../../polarlib.polar.html#polarlib.polar.frustration.calc_triadic_balance">[docs]</a>
+<span class="k">def</span> <span class="nf">calc_triadic_balance</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the distribution of triadic balances in a signed network graph.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - G (networkx.Graph): Input graph.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - gtb_dict (dict): Dictionary containing the distribution of triadic balances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gtb_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;+++&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;+--&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;++-&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;---&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="n">G_cliques</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">enumerate_all_cliques</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+    <span class="n">G_triads</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">G_cliques</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">G_triads</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">gtb_dict</span>
+
+    <span class="k">for</span> <span class="n">triad</span> <span class="ow">in</span> <span class="n">G_triads</span><span class="p">:</span>
+        <span class="n">tb</span> <span class="o">=</span> <span class="n">triadic_balance</span><span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="n">triad</span><span class="p">)</span>
+        <span class="n">gtb_dict</span><span class="p">[</span><span class="n">tb</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">gtb_dict</span><span class="p">:</span>
+        <span class="n">gtb_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">G_triads</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">gtb_dict</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Demetris Paschalides.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

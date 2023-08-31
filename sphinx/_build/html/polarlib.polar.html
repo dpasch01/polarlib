@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>polarlib.polar package &mdash; PolarLib 0.0.6 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=1fd71caa"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="polarlib.polar.attitude package" href="polarlib.polar.attitude.html" />
+    <link rel="prev" title="polarlib package" href="polarlib.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PolarLib
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">polarlib</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="polarlib.html">polarlib package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="polarlib.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">polarlib.polar package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.prism.html">polarlib.prism package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.utils.html">polarlib.utils package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.html#polarlib-main-module">polarlib.main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PolarLib</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">polarlib</a></li>
+          <li class="breadcrumb-item"><a href="polarlib.html">polarlib package</a></li>
+      <li class="breadcrumb-item active">polarlib.polar package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/polarlib.polar.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="polarlib-polar-package">
+<h1>polarlib.polar package<a class="headerlink" href="#polarlib-polar-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="polarlib.polar.attitude.html">polarlib.polar.attitude package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib-polar-attitude-mpqa-module">polarlib.polar.attitude.mpqa module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa"><code class="docutils literal notranslate"><span class="pre">mpqa</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.calculate_mpqa"><code class="docutils literal notranslate"><span class="pre">mpqa.calculate_mpqa()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.convert_to_mpqa_pos"><code class="docutils literal notranslate"><span class="pre">mpqa.convert_to_mpqa_pos()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.mpqa.mpqa.load_mpqa"><code class="docutils literal notranslate"><span class="pre">mpqa.load_mpqa()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib-polar-attitude-sentiment-attitude-pipeline-module">polarlib.polar.attitude.sentiment_attitude_pipeline module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.attitude_inference"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.attitude_inference()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.calculate_sentiment_attitudes"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.calculate_sentiment_attitudes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.extract_sentiment_attitude"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.extract_sentiment_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.get_raw_attitude"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.get_raw_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.sentiment_attitude_pipeline.SentimentAttitudePipeline.tokenize"><code class="docutils literal notranslate"><span class="pre">SentimentAttitudePipeline.tokenize()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib-polar-attitude-syntactical-sentiment-attitude-module">polarlib.polar.attitude.syntactical_sentiment_attitude module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.calculate_attitude"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.calculate_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.calculate_sentiment_attitudes"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.calculate_sentiment_attitudes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.extract_sentiment_attitude"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.extract_sentiment_attitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.find_dependency_paths"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.find_dependency_paths()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.find_longest_unique_path"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.find_longest_unique_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="polarlib.polar.attitude.html#polarlib.polar.attitude.syntactical_sentiment_attitude.SyntacticalSentimentAttitudePipeline.get_token_indices"><code class="docutils literal notranslate"><span class="pre">SyntacticalSentimentAttitudePipeline.get_token_indices()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="polarlib.polar.attitude.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="polarlib-polar-actor-extractor-module">
+<h2>polarlib.polar.actor_extractor module<a class="headerlink" href="#polarlib-polar-actor-extractor-module" title="Link to this heading"></a></h2>
+<dl class="py class" id="module-polarlib.polar.actor_extractor">
+<dt class="sig sig-object py" id="polarlib.polar.actor_extractor.EntityExtractor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.actor_extractor.</span></span><span class="sig-name descname"><span class="pre">EntityExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/actor_extractor.html#EntityExtractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.actor_extractor.EntityExtractor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for extracting entities from articles and querying DBpedia for entity information.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>output_dir (str): The directory where the output data will be stored.</p>
+</dd>
+<dt>Attributes:</dt><dd><p>output_dir (str): The output directory for storing extracted entity data.
+article_paths (list): List of article file paths obtained from the ‘pre_processed’ folder.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.actor_extractor.EntityExtractor.extract_article_entities">
+<span class="sig-name descname"><span class="pre">extract_article_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/actor_extractor.html#EntityExtractor.extract_article_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.actor_extractor.EntityExtractor.extract_article_entities" title="Link to this definition"></a></dt>
+<dd><p>Extract entities from a single article.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>path (str): The path to the article file.</p>
+</dd>
+<dt>Returns:</dt><dd><p>bool or None: Returns True if extraction is successful, None if an exception occurs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.actor_extractor.EntityExtractor.extract_entities">
+<span class="sig-name descname"><span class="pre">extract_entities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/actor_extractor.html#EntityExtractor.extract_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.actor_extractor.EntityExtractor.extract_entities" title="Link to this definition"></a></dt>
+<dd><p>Extract entities from all articles using multiprocessing.</p>
+<p>This method uses multiprocessing to extract entities from multiple articles concurrently.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.actor_extractor.EntityExtractor.query_dbpedia_entities">
+<span class="sig-name descname"><span class="pre">query_dbpedia_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.45</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spotlight_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'http://127.0.0.1:2222/rest/annotate'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/actor_extractor.html#EntityExtractor.query_dbpedia_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.actor_extractor.EntityExtractor.query_dbpedia_entities" title="Link to this definition"></a></dt>
+<dd><p>Query DBpedia Spotlight for entities in the given text.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>text (str): The input text to query for entities.
+confidence (float, optional): Confidence threshold for entity extraction. Defaults to 0.45.
+spotlight_url (str, optional): URL of the DBpedia Spotlight service. Defaults to ‘<a class="reference external" href="http://127.0.0.1:2222/rest/annotate">http://127.0.0.1:2222/rest/annotate</a>’.</p>
+</dd>
+<dt>Returns:</dt><dd><p>list: A list of dictionaries representing extracted entities.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="polarlib.polar.actor_extractor.NounPhraseExtractor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.actor_extractor.</span></span><span class="sig-name descname"><span class="pre">NounPhraseExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacy_model_str</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'en_core_web_sm'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/actor_extractor.html#NounPhraseExtractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.actor_extractor.NounPhraseExtractor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for extracting noun phrases from articles.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.actor_extractor.NounPhraseExtractor.extract_article_noun_phrases">
+<span class="sig-name descname"><span class="pre">extract_article_noun_phrases</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/actor_extractor.html#NounPhraseExtractor.extract_article_noun_phrases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.actor_extractor.NounPhraseExtractor.extract_article_noun_phrases" title="Link to this definition"></a></dt>
+<dd><p>Extract noun phrases from an article.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – The path to the article.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if successful, None otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.actor_extractor.NounPhraseExtractor.extract_noun_phrases">
+<span class="sig-name descname"><span class="pre">extract_noun_phrases</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/actor_extractor.html#NounPhraseExtractor.extract_noun_phrases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.actor_extractor.NounPhraseExtractor.extract_noun_phrases" title="Link to this definition"></a></dt>
+<dd><p>Extract noun phrases from all articles using multiprocessing.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="polarlib-polar-coalitions-and-conflicts-module">
+<h2>polarlib.polar.coalitions_and_conflicts module<a class="headerlink" href="#polarlib-polar-coalitions-and-conflicts-module" title="Link to this heading"></a></h2>
+<dl class="py class" id="module-polarlib.polar.coalitions_and_conflicts">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.DipoleGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.coalitions_and_conflicts.</span></span><span class="sig-name descname"><span class="pre">DipoleGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#DipoleGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.DipoleGenerator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for generating dipole information from fellowship graphs.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><p>output_dir (str): The directory where the generated output will be stored.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.DipoleGenerator.calculate_frustration">
+<span class="sig-name descname"><span class="pre">calculate_frustration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#DipoleGenerator.calculate_frustration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.calculate_frustration" title="Link to this definition"></a></dt>
+<dd><p>Calculate frustration index for a dipole.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>d (tuple): Tuple containing dipole information.</p>
+</dd>
+<dt>Returns:</dt><dd><p>tuple: Tuple containing updated dipole information with frustration index.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.DipoleGenerator.extract_dipole">
+<span class="sig-name descname"><span class="pre">extract_dipole</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_i_j</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fellowship_graphs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#DipoleGenerator.extract_dipole"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.extract_dipole" title="Link to this definition"></a></dt>
+<dd><p>Extract dipole information from fellowship graphs.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>f_i_j (tuple): Tuple of two fellowship indices.
+fellowship_graphs (list): List of fellowship graphs.</p>
+</dd>
+<dt>Returns:</dt><dd><p>None or tuple: None if dipole extraction fails, otherwise a tuple containing dipole information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.DipoleGenerator.generate_dipoles">
+<span class="sig-name descname"><span class="pre">generate_dipoles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_g_thr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_r_thr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#DipoleGenerator.generate_dipoles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.generate_dipoles" title="Link to this definition"></a></dt>
+<dd><p>Generate dipoles based on thresholds and save them to a file.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>f_g_thr (float, optional): Frustration index threshold. Defaults to 0.7.
+n_r_thr (float, optional): Negative ratio threshold. Defaults to 0.5.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.DipoleGenerator.get_connected_fellowships">
+<span class="sig-name descname"><span class="pre">get_connected_fellowships</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#DipoleGenerator.get_connected_fellowships"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.get_connected_fellowships" title="Link to this definition"></a></dt>
+<dd><p>Get pairs of connected fellowships.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>set: Set of tuples representing pairs of connected fellowships.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.DipoleGenerator.get_fellowship_graphs">
+<span class="sig-name descname"><span class="pre">get_fellowship_graphs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#DipoleGenerator.get_fellowship_graphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.DipoleGenerator.get_fellowship_graphs" title="Link to this definition"></a></dt>
+<dd><p>Get a list of fellowship graphs.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>list: List of NetworkX graphs representing fellowship graphs.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.FellowshipExtractor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.coalitions_and_conflicts.</span></span><span class="sig-name descname"><span class="pre">FellowshipExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#FellowshipExtractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.FellowshipExtractor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for extracting fellowships from a signed network using SIMAP algorithm.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>output_dir (str): The directory where output files will be saved.</p>
+</dd>
+<dt>Attributes:</dt><dd><p>output_dir (str): The directory where output files will be saved.
+fellowships (list): List to store extracted fellowships.
+sag (networkx.Graph): Signed adjacency graph.
+int_to_node (dict): Mapping of integer node indices to node names.
+node_to_int (dict): Mapping of node names to integer node indices.</p>
+</dd>
+<dt>Raises:</dt><dd><p>InsufficientSignedEdgesException: If there are not enough signed edges in the graph.</p>
+</dd>
+<dt>Methods:</dt><dd><dl class="simple">
+<dt>_decode_fellowship_list(f_list, simap_iteration_dict):</dt><dd><p>Decode fellowship list using the simap_iteration_dict.</p>
+</dd>
+<dt>signed_network_clustering(resolution, verbose, jar_path):</dt><dd><p>Run SIMAP algorithm to perform signed network clustering.</p>
+</dd>
+<dt>extract_fellowships(n_iter, resolution, merge_iter, jar_path, verbose):</dt><dd><p>Extract fellowships using iterations of signed network clustering.</p>
+</dd>
+<dt>_extract_fellowships(n_iter, resolution, merge_iter, jar_path, verbose):</dt><dd><p>Extract and merge fellowships using SIMAP algorithm.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.FellowshipExtractor.extract_fellowships">
+<span class="sig-name descname"><span class="pre">extract_fellowships</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jar_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#FellowshipExtractor.extract_fellowships"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.FellowshipExtractor.extract_fellowships" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.FellowshipExtractor.signed_network_clustering">
+<span class="sig-name descname"><span class="pre">signed_network_clustering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jar_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#FellowshipExtractor.signed_network_clustering"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.FellowshipExtractor.signed_network_clustering" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.InsufficientSignedEdgesException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.coalitions_and_conflicts.</span></span><span class="sig-name descname"><span class="pre">InsufficientSignedEdgesException</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extractor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#polarlib.polar.coalitions_and_conflicts.FellowshipExtractor" title="polarlib.polar.coalitions_and_conflicts.FellowshipExtractor"><span class="pre">FellowshipExtractor</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#InsufficientSignedEdgesException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.InsufficientSignedEdgesException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.coalitions_and_conflicts.</span></span><span class="sig-name descname"><span class="pre">TopicAttitudeCalculator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class for calculating topic attitudes and polarization indices based on sentiment attitudes and dipole information.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.calculate_polarization_index">
+<span class="sig-name descname"><span class="pre">calculate_polarization_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.calculate_polarization_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.calculate_polarization_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.extract_dipole_topics">
+<span class="sig-name descname"><span class="pre">extract_dipole_topics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dipole_tuple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.extract_dipole_topics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.extract_dipole_topics" title="Link to this definition"></a></dt>
+<dd><p>Extracts dipole-related topic information, including attitudes and clusters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dipole_tuple</strong> – A tuple containing dipole information and sentiment attitudes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing dipole-related topic information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.get_polarization_topics">
+<span class="sig-name descname"><span class="pre">get_polarization_topics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.get_polarization_topics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.get_polarization_topics" title="Link to this definition"></a></dt>
+<dd><p>Retrieves dipole-related topics and organizes them in a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary containing dipole-related topic information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.get_topic_attitudes">
+<span class="sig-name descname"><span class="pre">get_topic_attitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aggr_func=&lt;function</span> <span class="pre">mean&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.get_topic_attitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.get_topic_attitudes" title="Link to this definition"></a></dt>
+<dd><p>Retrieves topic attitudes and polarization indices for dipoles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>aggr_func</strong> – Aggregation function for sentiment attitudes.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of dictionaries containing topic attitudes and polarization indices for dipoles.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.load_sentiment_attitudes">
+<span class="sig-name descname"><span class="pre">load_sentiment_attitudes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.load_sentiment_attitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.load_sentiment_attitudes" title="Link to this definition"></a></dt>
+<dd><p>Loads sentiment attitudes from stored attitude files and associates them with noun phrases.</p>
+<p>This method uses multiprocessing for efficient loading of attitude data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.read_sentiment_attitudes">
+<span class="sig-name descname"><span class="pre">read_sentiment_attitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.read_sentiment_attitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.read_sentiment_attitudes" title="Link to this definition"></a></dt>
+<dd><p>Reads sentiment attitude data from a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – The path to the sentiment attitude file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing sentiment attitudes for noun phrases.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.resample_attitudes">
+<span class="sig-name descname"><span class="pre">resample_attitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.resample_attitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.resample_attitudes" title="Link to this definition"></a></dt>
+<dd><p>Resamples attitudes to achieve a balanced distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>atts</strong> – A list of attitudes.</p></li>
+<li><p><strong>n</strong> – The desired number of resampled attitudes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of resampled attitudes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.undersample_dipole_attitudes">
+<span class="sig-name descname"><span class="pre">undersample_dipole_attitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dipole_tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aggr_func=&lt;function</span> <span class="pre">mean&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/coalitions_and_conflicts.html#TopicAttitudeCalculator.undersample_dipole_attitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.coalitions_and_conflicts.TopicAttitudeCalculator.undersample_dipole_attitudes" title="Link to this definition"></a></dt>
+<dd><p>Undersamples the dipole attitudes by aggregating sentiment attitudes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dipole_tuple</strong> – A tuple containing the dipole information and sentiment attitudes.</p></li>
+<li><p><strong>aggr_func</strong> – Aggregation function for sentiment attitudes.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of polarized clusters and their attitude scores.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="polarlib-polar-frustration-module">
+<h2>polarlib.polar.frustration module<a class="headerlink" href="#polarlib-polar-frustration-module" title="Link to this heading"></a></h2>
+<dl class="py function" id="module-polarlib.polar.frustration">
+<dt class="sig sig-object py" id="polarlib.polar.frustration.G_to_fi">
+<span class="sig-prename descclassname"><span class="pre">polarlib.polar.frustration.</span></span><span class="sig-name descname"><span class="pre">G_to_fi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/frustration.html#G_to_fi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.frustration.G_to_fi" title="Link to this definition"></a></dt>
+<dd><p>Convert a signed network graph to frustration index related data.</p>
+<p>Parameters:
+- G (networkx.Graph): Input graph.</p>
+<p>Returns:
+- sign_G (networkx.Graph): A graph with nodes and edges representing positive and negative edges.
+- adj_sign_G (numpy.matrix): Adjacency matrix of the sign_G graph.
+- sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.
+- id_to_node (dict): Mapping of node indices to their original names.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="polarlib.polar.frustration.calc_triadic_balance">
+<span class="sig-prename descclassname"><span class="pre">polarlib.polar.frustration.</span></span><span class="sig-name descname"><span class="pre">calc_triadic_balance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/frustration.html#calc_triadic_balance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.frustration.calc_triadic_balance" title="Link to this definition"></a></dt>
+<dd><p>Calculate the distribution of triadic balances in a signed network graph.</p>
+<p>Parameters:
+- G (networkx.Graph): Input graph.</p>
+<p>Returns:
+- gtb_dict (dict): Dictionary containing the distribution of triadic balances.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="polarlib.polar.frustration.calculate_frustration_index">
+<span class="sig-prename descclassname"><span class="pre">polarlib.polar.frustration.</span></span><span class="sig-name descname"><span class="pre">calculate_frustration_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sign_G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign_edgelist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/frustration.html#calculate_frustration_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.frustration.calculate_frustration_index" title="Link to this definition"></a></dt>
+<dd><p>Calculate the frustration index of a signed network graph.</p>
+<p>Parameters:
+- sign_G (networkx.Graph): Graph with positive and negative edges.
+- sign_matrix (numpy.matrix): Matrix representing edge signs.
+- sign_edgelist (dict): Dictionary of edge weights for positive and negative edges.</p>
+<p>Returns:
+- f_g (float): Frustration index value.
+- rounded_obj_value (float): Rounded objective value.
+- solve_time (float): Time taken to solve the optimization model.
+- optimal_solution (dict): Optimal variable values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="polarlib.polar.frustration.triadic_balance">
+<span class="sig-prename descclassname"><span class="pre">polarlib.polar.frustration.</span></span><span class="sig-name descname"><span class="pre">triadic_balance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">G</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triad</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/frustration.html#triadic_balance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.frustration.triadic_balance" title="Link to this definition"></a></dt>
+<dd><p>Calculate the triadic balance of a triad in a signed network graph.</p>
+<p>Parameters:
+- G (networkx.Graph): Graph containing the triad.
+- triad (tuple): Tuple containing nodes of the triad.</p>
+<p>Returns:
+- balance_str (str): String representing the triadic balance (+ and - signs).</p>
+</dd></dl>
+
+</section>
+<section id="polarlib-polar-news-corpus-collector-module">
+<h2>polarlib.polar.news_corpus_collector module<a class="headerlink" href="#polarlib-polar-news-corpus-collector-module" title="Link to this heading"></a></h2>
+<dl class="py class" id="module-polarlib.polar.news_corpus_collector">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.news_corpus_collector.</span></span><span class="sig-name descname"><span class="pre">NewsCorpusCollector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keywords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector.article_collection_process">
+<span class="sig-name descname"><span class="pre">article_collection_process</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idxhgd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector.article_collection_process"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector.article_collection_process" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector.collect_archives">
+<span class="sig-name descname"><span class="pre">collect_archives</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector.collect_archives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector.collect_archives" title="Link to this definition"></a></dt>
+<dd><p>Collect GDELT archives and store them in the specified output directory.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector.collect_articles">
+<span class="sig-name descname"><span class="pre">collect_articles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actor1countrycode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'USA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actor2countrycode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'USA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_articles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector.collect_articles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector.collect_articles" title="Link to this definition"></a></dt>
+<dd><p>Collect articles from GDELT archives and store them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>actor1countrycode</strong> – Actor 1 country code.</p></li>
+<li><p><strong>actor2countrycode</strong> – Actor 2 country code.</p></li>
+<li><p><strong>n_threads</strong> – Number of threads for parallel processing.</p></li>
+<li><p><strong>use_web_archive</strong> – Flag to use web archiving.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Args:</dt><dd><p>n_articles:</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector.parse_html">
+<span class="sig-name descname"><span class="pre">parse_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector.parse_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector.parse_html" title="Link to this definition"></a></dt>
+<dd><p>Parse HTML content from a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Path to the HTML file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if parsing is successful.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector.pre_process_article">
+<span class="sig-name descname"><span class="pre">pre_process_article</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector.pre_process_article"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector.pre_process_article" title="Link to this definition"></a></dt>
+<dd><p>Pre-process and store the article for later analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – path to the article .json file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Boolean</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector.pre_process_articles">
+<span class="sig-name descname"><span class="pre">pre_process_articles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector.pre_process_articles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector.pre_process_articles" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.NewsCorpusCollector.retrieve_article">
+<span class="sig-name descname"><span class="pre">retrieve_article</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">article_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parse_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nlp_flag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#NewsCorpusCollector.retrieve_article"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.NewsCorpusCollector.retrieve_article" title="Link to this definition"></a></dt>
+<dd><p>Retrieve and parse an article from a given URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>article_url</strong> – Article URL.</p></li>
+<li><p><strong>parse_flag</strong> – Flag to indicate parsing.</p></li>
+<li><p><strong>nlp_flag</strong> – Flag to indicate NLP processing.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parsed article object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.URLKeywordExtractor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.news_corpus_collector.</span></span><span class="sig-name descname"><span class="pre">URLKeywordExtractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#URLKeywordExtractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.URLKeywordExtractor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.news_corpus_collector.URLKeywordExtractor.extract_keywords">
+<span class="sig-name descname"><span class="pre">extract_keywords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/news_corpus_collector.html#URLKeywordExtractor.extract_keywords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.news_corpus_collector.URLKeywordExtractor.extract_keywords" title="Link to this definition"></a></dt>
+<dd><p>Extract keywords from the stored article texts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n</strong> – Number of top keywords to extract (default is 20).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of extracted keywords.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="polarlib-polar-sag-generator-module">
+<h2>polarlib.polar.sag_generator module<a class="headerlink" href="#polarlib-polar-sag-generator-module" title="Link to this heading"></a></h2>
+<dl class="py class" id="module-polarlib.polar.sag_generator">
+<dt class="sig sig-object py" id="polarlib.polar.sag_generator.SAGGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.sag_generator.</span></span><span class="sig-name descname"><span class="pre">SAGGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sag_generator.html#SAGGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sag_generator.SAGGenerator" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.sag_generator.SAGGenerator.calculate_attitude_buckets">
+<span class="sig-name descname"><span class="pre">calculate_attitude_buckets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sag_generator.html#SAGGenerator.calculate_attitude_buckets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sag_generator.SAGGenerator.calculate_attitude_buckets" title="Link to this definition"></a></dt>
+<dd><p>Calculate attitude buckets based on sentiment attitudes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>verbose</strong> – If True, print additional statistics.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of attitude buckets.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.sag_generator.SAGGenerator.construct_sag">
+<span class="sig-name descname"><span class="pre">construct_sag</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sag_generator.html#SAGGenerator.construct_sag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sag_generator.SAGGenerator.construct_sag" title="Link to this definition"></a></dt>
+<dd><p>Construct a Signed Attitude Graph (SAG) based on sentiment attitudes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The constructed SAG, node mappings, and edge weights.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.sag_generator.SAGGenerator.convert_attitude_signs">
+<span class="sig-name descname"><span class="pre">convert_attitude_signs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_category_mapping</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minimum_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sag_generator.html#SAGGenerator.convert_attitude_signs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sag_generator.SAGGenerator.convert_attitude_signs" title="Link to this definition"></a></dt>
+<dd><p>Convert sentiment attitudes to attitude signs based on bin category mapping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bin_category_mapping</strong> – A dictionary that maps bin categories to their respective bins.</p></li>
+<li><p><strong>minimum_frequency</strong> – Minimum frequency threshold for pairs to be included.</p></li>
+<li><p><strong>verbose</strong> – If True, print additional information.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.sag_generator.SAGGenerator.load_sentiment_attitudes">
+<span class="sig-name descname"><span class="pre">load_sentiment_attitudes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/sag_generator.html#SAGGenerator.load_sentiment_attitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.sag_generator.SAGGenerator.load_sentiment_attitudes" title="Link to this definition"></a></dt>
+<dd><p>Load sentiment attitudes from multiple files in parallel and update the pair_sentiment_attitude_dict.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="polarlib-polar-topic-identifier-module">
+<h2>polarlib.polar.topic_identifier module<a class="headerlink" href="#polarlib-polar-topic-identifier-module" title="Link to this heading"></a></h2>
+<dl class="py class" id="module-polarlib.polar.topic_identifier">
+<dt class="sig sig-object py" id="polarlib.polar.topic_identifier.TopicIdentifier">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">polarlib.polar.topic_identifier.</span></span><span class="sig-name descname"><span class="pre">TopicIdentifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/topic_identifier.html#TopicIdentifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.topic_identifier.TopicIdentifier" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.topic_identifier.TopicIdentifier.encode_noun_phrases">
+<span class="sig-name descname"><span class="pre">encode_noun_phrases</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/topic_identifier.html#TopicIdentifier.encode_noun_phrases"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.topic_identifier.TopicIdentifier.encode_noun_phrases" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="polarlib.polar.topic_identifier.TopicIdentifier.noun_phrase_clustering">
+<span class="sig-name descname"><span class="pre">noun_phrase_clustering</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/polarlib/polar/topic_identifier.html#TopicIdentifier.noun_phrase_clustering"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#polarlib.polar.topic_identifier.TopicIdentifier.noun_phrase_clustering" title="Link to this definition"></a></dt>
+<dd><p>Perform noun phrase clustering using community detection.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><p>chunk_size (int, optional): Size of data chunks for processing. Default is 5000.
+threshold (float, optional): Similarity threshold for clustering. Default is 0.80.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<span class="target" id="module-polarlib.polar"></span></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="polarlib.html" class="btn btn-neutral float-left" title="polarlib package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="polarlib.polar.attitude.html" class="btn btn-neutral float-right" title="polarlib.polar.attitude package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Demetris Paschalides.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
