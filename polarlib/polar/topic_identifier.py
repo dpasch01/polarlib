@@ -1,4 +1,4 @@
-import os, string, nltk, re, math, logging, torch
+import os, string, nltk, re, math, logging, torch, gzip
 
 from collections import defaultdict
 from joblib import Parallel, delayed
@@ -13,7 +13,6 @@ import numpy as np
 from nltk.corpus import stopwords
 from textblob import TextBlob
 from sentence_transformers import SentenceTransformer
-
 
 class TopicIdentifier:
 
@@ -455,7 +454,9 @@ class TopicIdentifier:
             } for k, v in tqdm(list(clusters.items()))
         }
 
-        with open(os.path.join(self.output_dir, 'topics.json'), 'w') as f:
+        print('Dumping clusters into file.')
+
+        with gzip.open(os.path.join(self.output_dir, 'topics.json.gz'), 'wt') as f:
             json.dump(topical_clusters, f)
 
 

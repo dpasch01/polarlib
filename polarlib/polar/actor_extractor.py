@@ -29,7 +29,7 @@ class EntityExtractor:
         article_paths (list): List of article file paths obtained from the 'pre_processed' folder.
     """
 
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, entity_set=None):
         """
         Initialize the EntityExtractor.
 
@@ -37,6 +37,7 @@ class EntityExtractor:
             output_dir (str): The directory where the output data will be stored.
         """
         self.output_dir      = output_dir
+        self.entity_set      = entity_set
 
         self.article_paths   = list(itertools.chain.from_iterable([
             [os.path.join(o1, p) for p in o3]
@@ -101,6 +102,7 @@ class EntityExtractor:
             sentence_list = article['text'].split('\n')
             sentence_list = [sent_tokenize(s) for s in sentence_list]
             sentence_list = list(itertools.chain.from_iterable(sentence_list))
+
             entity_list   = self.query_dbpedia_entities(article['text'])
 
             max_from_i, sentence_object_list = 0, []
@@ -124,6 +126,8 @@ class EntityExtractor:
 
                 for e in entity_list:
 
+                    if e == None or (self.entity_set and e['title'] not in self.entity_set): continue
+
                     e_range_set = set(list(range(e['begin'], e['end'])))
 
                     if len(s_range_set.intersection(e_range_set)) > 0: sentence_object['entities'].append(e)
@@ -139,7 +143,6 @@ class EntityExtractor:
             with open(output_file, 'w') as f:     json.dump(article_dict_str, f)
 
         except Exception as ex:
-
             print(ex)
             return None
 
@@ -265,16 +268,17 @@ class NounPhraseExtractor:
 
         except Exception as ex:
 
+            print('Error found.')
             print(ex)
             return None
 
         return True
 
-    def extract_noun_phrases(self):
+    def extract_noun_phrases(self, n_processes=16):
         """
         Extract noun phrases from all articles using multiprocessing.
         """
-        pool = Pool(multiprocessing.cpu_count() - 8)
+        pool = Pool(n_processes)
 
         for i in tqdm(
                 pool.imap_unordered(self.extract_article_noun_phrases, self.entity_paths),

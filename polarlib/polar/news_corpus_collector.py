@@ -21,7 +21,6 @@ GDELT_FIELDS = [
     'actiongeo_adm1code', 'actiongeo_lat', 'actiongeo_long', 'actiongeo_featureid', 'dateadded', 'sourceurl'
 ]
 
-
 class URLKeywordExtractor:
 
     def __init__(self, url_list):
@@ -59,7 +58,6 @@ class URLKeywordExtractor:
         keyword_list = sorted(keyword_list, key=lambda t: t[1], reverse=True)[:n]
 
         return [k[0] for k in keyword_list]
-
 
 class NewsCorpusCollector:
 

@@ -1,5 +1,18 @@
 import json, numpy
 
+def convert_sentiment_attitude(sentiment_value, sentiment_mapping):
+
+    sentiment_category = "NEUTRAL"
+
+    for category, category_bins in sentiment_mapping.items():
+
+        for b in category_bins:
+
+            if sentiment_value >= b[0] and sentiment_value < b[1]:
+                sentiment_category = category
+                break
+
+    return sentiment_category
 
 def load_article(path, func=lambda t: json.loads(json.load(t))):
     """
@@ -61,7 +74,7 @@ def is_subsequence(sub, seq):
         bool: True if 'sub' is a subsequence of 'seq', False otherwise.
     """
     it = iter(seq)
-    
+
     return all(c in it for c in sub)
 
 
@@ -99,3 +112,26 @@ def sentiment_threshold_difference(swn_pos, swn_neg):
     swn_pos = abs(swn_pos)
     swn_neg = abs(swn_neg)
     return numpy.sign(swn_pos - swn_neg) * (abs(swn_pos - swn_neg))
+
+def calculate_value_buckets(values, verbose=False):
+
+    if verbose:
+
+        print('Mean:', numpy.mean(values))
+        print('Std.:', numpy.std(values))
+        print()
+
+    n, bins = numpy.histogram(values)
+
+    if verbose:
+
+        for k, ij in enumerate(zip(bins[:-1], bins[1:])):
+
+            i = ij[0]
+            j = ij[1]
+
+            print(f'>= {i:<25} and < {j:<25}:', n[k])
+
+    bins = list(zip(bins[:-1], bins[1:]))
+
+    return bins

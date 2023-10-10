@@ -1,4 +1,4 @@
-import os, pickle, math, itertools, pandas as pd, numpy, subprocess
+import os, pickle, math, itertools, pandas as pd, numpy, subprocess, gzip
 
 from tqdm import tqdm
 from polarlib.utils.utils import *
@@ -9,6 +9,8 @@ from multiprocessing import Pool
 from collections import defaultdict, Counter
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import ward, fcluster
+
+from collections import defaultdict
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
@@ -124,7 +126,7 @@ class FellowshipExtractor:
 
             for e in self.fellowships[0]: print('-', e)
 
-        with open(os.path.join(self.output_dir, 'fellowships.json'), 'w') as f: json.dump({'fellowships': self.fellowships}, f)
+        with open(os.path.join(self.output_dir, 'polarization/fellowships.json'), 'w') as f: json.dump({'fellowships': self.fellowships}, f)
 
         return self.fellowships
 
@@ -439,8 +441,14 @@ class DipoleGenerator:
         Returns:
             tuple: Tuple containing updated dipole information with frustration index.
         """
-        si_sign_G, si_adj_sign_G, si_sign_edgelist, si_int_to_node = G_to_fi(d[1]['d_ij'])
-        si_f_g, si_f_e, si_t, si_solution_dict = calculate_frustration_index(si_sign_G, si_adj_sign_G, si_sign_edgelist)
+
+        si_f_g = None
+
+        try:
+            si_sign_G, si_adj_sign_G, si_sign_edgelist, si_int_to_node = G_to_fi(d[1]['d_ij'])
+            si_f_g, si_f_e, si_t, si_solution_dict = calculate_frustration_index(si_sign_G, si_adj_sign_G, si_sign_edgelist)
+        except Exception as ex:
+            print(d[0], ex)
 
         d[1]['f_g'] = si_f_g
 
@@ -455,7 +463,7 @@ class DipoleGenerator:
             n_r_thr (float, optional): Negative ratio threshold. Defaults to 0.5.
         """
         self.dipoles = self._generate_dipoles(f_g_thr=f_g_thr, n_r_thr=f_g_thr)
-        with open(os.path.join(self.output_dir, 'dipoles.pckl'), 'wb') as f: pickle.dump(self.dipoles, f)
+        with open(os.path.join(self.output_dir, 'polarization/' + 'dipoles.pckl'), 'wb') as f: pickle.dump(self.dipoles, f)
 
     def _generate_dipoles(self, f_g_thr=0.7, n_r_thr=0.5):
         """
@@ -494,7 +502,7 @@ class DipoleGenerator:
         fellowship_dipoles = [d for d in fellowship_dipoles if d]
         fellowship_dipoles = [d for d in fellowship_dipoles if d and d[1]['negative_ratio'] >= n_r_thr]
         fellowship_dipoles = [self.calculate_frustration(d) for d in tqdm(fellowship_dipoles, desc='Generating Dipoles')]
-        fellowship_dipoles = [d for d in fellowship_dipoles if d[1]['f_g'] >= f_g_thr]
+        fellowship_dipoles = [d for d in fellowship_dipoles if d[1]['f_g'] == None or d[1]['f_g'] >= f_g_thr]
 
         return fellowship_dipoles
 
@@ -515,8 +523,8 @@ class TopicAttitudeCalculator:
         with open(os.path.join(self.output_dir, 'polarization/' + 'int_to_node.pckl'), 'rb') as f: int_to_node = pickle.load(f)
         with open(os.path.join(self.output_dir, 'polarization/' + 'node_to_int.pckl'), 'rb') as f: node_to_int = pickle.load(f)
         with open(os.path.join(self.output_dir, 'fellowships.json'), 'r') as f:                    fellowship_list = json.load(f)['fellowships']
-        with open(os.path.join(self.output_dir, 'topics.json'), 'r') as f:                         topics = json.load(f)
-        with open(os.path.join(self.output_dir, 'dipoles.pckl'), 'rb') as f:                       dipole_list = pickle.load(f)
+        with gzip.open(os.path.join(self.output_dir, 'topics.json.gz'), 'r') as f:            topics = json.load(f)
+        with open(os.path.join(self.output_dir, 'polarization/' + 'dipoles.pckl'), 'rb') as f:     dipole_list = pickle.load(f)
 
         self.sag = G
         self.int_to_node = int_to_node
@@ -550,11 +558,7 @@ class TopicAttitudeCalculator:
 
                     self.np_topics_dict[c] = list(set(self.np_topics_dict[c]))
 
-    def undersample_dipole_attitudes(
-            self,
-            dipole_tuple,
-            aggr_func=numpy.mean
-    ):
+    def undersample_dipole_attitudes(self, dipole_tuple, aggr_func=numpy.mean, verbose=False):
         """
         Undersamples the dipole attitudes by aggregating sentiment attitudes.
 
@@ -562,65 +566,61 @@ class TopicAttitudeCalculator:
         :param aggr_func: Aggregation function for sentiment attitudes.
         :return: A list of polarized clusters and their attitude scores.
         """
-        fi, fj      = dipole_tuple[0]
+        fi, fj = dipole_tuple[0]
         dipole_dict = dipole_tuple[1]
+        dipole_key = (fi, fj)
 
-        if (fi, fj) not in self.dipole_topics_dict: return []
+        if dipole_key not in self.dipole_topics_dict: return []
 
         fi_entities = dipole_dict['simap_1']
         fj_entities = dipole_dict['simap_2']
 
-        fi_np_attitudes_dict = {}
-        fj_np_attitudes_dict = {}
+        entity_np_sentiment_attitudes = self.entity_np_sentiment_attitudes
 
-        for e in fi_entities:
-            if e not in self.entity_np_sentiment_attitudes: continue
+        def aggregate_attitudes(entities):
+            attitudes_dict = defaultdict(list)
+            for e in entities:
+                for np, atts in entity_np_sentiment_attitudes.get(e, {}).items():
+                    attitudes_dict[np].extend(atts)
+            return attitudes_dict
 
-            for np, atts in self.entity_np_sentiment_attitudes[e].items():
-                if not np in fi_np_attitudes_dict: fi_np_attitudes_dict[np] = []
+        if verbose: print('Calculating attitude aggregates...')
 
-                fi_np_attitudes_dict[np] += atts
+        fi_np_attitudes_dict = aggregate_attitudes(fi_entities)
+        fj_np_attitudes_dict = aggregate_attitudes(fj_entities)
 
-        for e in fj_entities:
-            if e not in self.entity_np_sentiment_attitudes: continue
+        dipole_topics = self.dipole_topics_dict[dipole_key]
+        np_clusters = dipole_topics['np_clusters']
+        np_to_ci    = {np: ci for ci, nps in np_clusters.items() for np in nps}
 
-            for np, atts in self.entity_np_sentiment_attitudes[e].items():
-                if not np in fj_np_attitudes_dict: fj_np_attitudes_dict[np] = []
+        if verbose: print('Done.')
 
-                fj_np_attitudes_dict[np] += atts
+        def frame_attitudes(np_attitudes_dict):
+            frame_attitudes_dict = defaultdict(list)
+            for np, np_atts in np_attitudes_dict.items():
+                ci = np_to_ci.get(np)
+                if ci:  frame_attitudes_dict[ci].extend(np_atts)
+            return frame_attitudes_dict
 
-        fi_frame_attitudes = {}
-        fj_frame_attitudes = {}
+        if verbose: print('Framing attitudes...')
 
-        for np, np_atts in fi_np_attitudes_dict.items():
+        fi_frame_attitudes = frame_attitudes(fi_np_attitudes_dict)
+        fj_frame_attitudes = frame_attitudes(fj_np_attitudes_dict)
 
-            for ci in self.dipole_topics_dict[(fi, fj)]['np_clusters']:
-                if np not in self.dipole_topics_dict[(fi, fj)]['np_clusters'][ci]: continue
-                if ci not in fi_frame_attitudes: fi_frame_attitudes[ci] = []
-                fi_frame_attitudes[ci] += np_atts
+        if verbose: print('Done.')
 
-        for np, np_atts in fj_np_attitudes_dict.items():
-
-            for ci in self.dipole_topics_dict[(fi, fj)]['np_clusters']:
-                if np not in self.dipole_topics_dict[(fi, fj)]['np_clusters'][ci]: continue
-                if ci not in fj_frame_attitudes: fj_frame_attitudes[ci] = []
-                fj_frame_attitudes[ci] += np_atts
-
-        polarization_list = []
-
-        for ci in self.dipole_topics_dict[(fi, fj)]['np_clusters']:
-            if ci not in fi_frame_attitudes: continue
-            if ci not in fj_frame_attitudes: continue
-
-            polarization_list.append({
-                'dipole':  (fi, fj),
+        polarization_list = [
+            {
+                'dipole': dipole_key,
                 'atts_fi': fi_frame_attitudes[ci],
                 'atts_fj': fj_frame_attitudes[ci],
                 'topic': {
-                    'id':  ci,
-                    'nps': self.dipole_topics_dict[(fi, fj)]['np_clusters'][ci]
+                    'id': ci,
+                    'nps': np_clusters[ci]
                 }
-            })
+            }
+            for ci in np_clusters if ci in fi_frame_attitudes and ci in fj_frame_attitudes
+        ]
 
         return polarization_list
 
@@ -648,38 +648,39 @@ class TopicAttitudeCalculator:
 
         :return: None
         """
-        pool = Pool(multiprocessing.cpu_count() - 4)
+        num_processes = multiprocessing.cpu_count() // 2  # Adjust based on testing
+        chunk_size = len(self.attitude_path_list) // num_processes
+
+        pool = Pool(num_processes)
+
+        entity_np_sentiment_attitudes = defaultdict(lambda: defaultdict(list))
 
         for result in tqdm(
-                pool.imap_unordered(self.read_sentiment_attitudes, self.attitude_path_list),
+                pool.imap_unordered(self.read_sentiment_attitudes, self.attitude_path_list, chunksize=chunk_size),
                 desc='Fetching Attitudes',
                 total=len(self.attitude_path_list)
         ):
             for r in result:
+                noun_phrase_attitudes = r['noun_phrase_attitudes']
 
-                r = r['noun_phrase_attitudes']
+                for (entity, np), attitudes in noun_phrase_attitudes.items():
+                    clean_np = self.clean_np_dict.get(np)
 
-                for p in r:
+                    # Skip if clean_np is not in clean_np_dict
+                    if not clean_np:
+                        continue
 
-                    if p[1] not in self.clean_np_dict: break
-
-                    if p[0] not in self.entity_np_sentiment_attitudes: self.entity_np_sentiment_attitudes[p[0]] = {}
-
-                    c = self.clean_np_dict[p[1]]
-
-                    if c not in self.entity_np_sentiment_attitudes[p[0]]: self.entity_np_sentiment_attitudes[p[0]][c] = []
-
-                    if len(r[p]) > 0 and not isinstance(r[p][0], float):
-
-                        self.entity_np_sentiment_attitudes[p[0]][c] += [
-                            0 if t['NEUTRAL'] > t['NEGATIVE'] and t['NEUTRAL'] > t['POSITIVE'] else \
-                                 t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] and t['POSITIVE'] > t['NEUTRAL'] else \
-                                -t['NEGATIVE'] for t in result[p]
+                    if attitudes and not isinstance(attitudes[0], float):
+                        sentiment_values = [
+                            0 if t['NEUTRAL'] > max(t['NEGATIVE'], t['POSITIVE']) else
+                            t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] else
+                            -t['NEGATIVE'] for t in attitudes
                         ]
-
+                        entity_np_sentiment_attitudes[entity][clean_np].extend(sentiment_values)
                     else:
+                        entity_np_sentiment_attitudes[entity][clean_np].extend(attitudes)
 
-                        self.entity_np_sentiment_attitudes[p[0]][c] += r[p]
+        self.entity_np_sentiment_attitudes = dict(entity_np_sentiment_attitudes)
 
         pool.close()
         pool.join()
@@ -702,39 +703,41 @@ class TopicAttitudeCalculator:
         :param dipole_tuple: A tuple containing dipole information and sentiment attitudes.
         :return: A dictionary containing dipole-related topic information.
         """
-        dipole_id, dipole_obj, np_attitudes_dict = dipole_tuple[0], dipole_tuple[1], {}
+        dipole_id, dipole_obj = dipole_tuple[0], dipole_tuple[1]
+        np_attitudes_dict = {}
+
+        entity_np_sentiment_attitudes = self.entity_np_sentiment_attitudes
+        clean_np_dict = self.clean_np_dict
+        np_topics_dict = self.np_topics_dict
 
         for entity in dipole_obj['d_ij'].nodes():
+            entity_attitudes = entity_np_sentiment_attitudes.get(entity)
+            if not entity_attitudes:
+                continue
 
-            if entity not in self.entity_np_sentiment_attitudes: continue
+            for np, att_obj in entity_attitudes.items():
+                np_attitudes_dict.setdefault(np, []).extend(att_obj)
 
-            for np, att_obj in self.entity_np_sentiment_attitudes[entity].items():
+        dipole_np_labels = {
+            np: set(np_topics_dict[clean_np_dict[np]])
+            for np in np_attitudes_dict.keys()
+            if np in clean_np_dict and clean_np_dict[np] in np_topics_dict
+        }
 
-                if np not in np_attitudes_dict: np_attitudes_dict[np] = []
+        if not dipole_np_labels:
+            return None
 
-                np_attitudes_dict[np] += att_obj.copy()
-
-        dipole_np_list = list(sorted(np_attitudes_dict.keys()))
-        dipole_np_labels = {np: set(self.np_topics_dict[self.clean_np_dict[np]]) for np in dipole_np_list if np in self.clean_np_dict and self.clean_np_dict[np] in self.np_topics_dict}
-
-        np_attitudes_dict = {k: v for k, v in np_attitudes_dict.items() if k in dipole_np_labels}.copy()
-
-        if len(dipole_np_labels) == 0: return None
-
-        cluster_dict = {}
-
-        for k, v in dipole_np_labels.items():
-
-            for _ in v:
-                if _ not in cluster_dict: cluster_dict[_] = []
-                cluster_dict[_].append(k)
+        cluster_dict = defaultdict(list)
+        for np, topics in dipole_np_labels.items():
+            for topic in topics:
+                cluster_dict[topic].append(np)
 
         return {
             'fellowship_1': dipole_id[0],
             'fellowship_2': dipole_id[1],
             'dipole_topics': {
-                'np_attitudes': np_attitudes_dict.copy(),
-                'np_clusters': dict(cluster_dict).copy()
+                'np_attitudes': np_attitudes_dict,
+                'np_clusters': dict(cluster_dict)
             }
         }
 
@@ -746,7 +749,7 @@ class TopicAttitudeCalculator:
         """
         dipole_topics = []
 
-        for dipole in self.dipoles:
+        for dipole in tqdm(self.dipoles):
 
             if not dipole: continue
 
@@ -791,11 +794,11 @@ class TopicAttitudeCalculator:
         :param aggr_func: Aggregation function for sentiment attitudes.
         :return: A list of dictionaries containing topic attitudes and polarization indices for dipoles.
         """
-        self.get_polarization_topics()
 
         dipole_topic_attitudes = []
 
         for dipole in tqdm(self.dipoles, desc='Undersampling Topic Attitudes'):
+
             if not dipole: continue
 
             dipole_topic_attitudes.append(self.undersample_dipole_attitudes(dipole, aggr_func))
@@ -852,7 +855,7 @@ class TopicAttitudeCalculator:
 
         self.dipole_topic_attitudes = filtered_topic_attitudes
 
-        with open(os.path.join(self.output_dir, 'attitudes.pckl'), 'wb') as f: pickle.dump(self.dipole_topic_attitudes, f)
+        with open(os.path.join(self.output_dir, 'polarization/attitudes.pckl'), 'wb') as f: pickle.dump(self.dipole_topic_attitudes, f)
 
         return filtered_topic_attitudes
 
