@@ -7,34 +7,11 @@ from stanza.server import CoreNLPClient
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-class OpenIETripleGenerator:
+def encode_text(text):
 
-    def __init__(self, output_dir):
+    with CoreNLPClient(endpoint="http://localhost:9000", annotators=["openie"], be_quiet=True, start_server=False) as client:
 
-        self.output_dir = output_dir
-
-        if not self.is_corenlp_installed():
-
-            import stanza
-
-            stanza.install_corenlp()
-
-        self.client = CoreNLPClient(annotators=["openie"], be_quiet=False)
-
-        self.article_paths   = list(itertools.chain.from_iterable([
-            [os.path.join(o1, p) for p in o3]
-            for o1, o2, o3 in os.walk(os.path.join(self.output_dir, 'pre_processed'))
-        ]))
-
-    def is_corenlp_installed(self):
-
-        corenlp_home = os.environ.get('CORENLP_HOME', os.path.expanduser('~/stanza_corenlp'))
-
-        return os.path.exists(corenlp_home)
-
-    def encode_text(self, text):
-
-        ann     = self.client.annotate(text)
+        ann     = client.annotate(text)
         triples = []
 
         for sentence in ann.sentence:
@@ -50,6 +27,54 @@ class OpenIETripleGenerator:
 
         return triples
 
+class OpenIETripleGenerator:
+
+    def __init__(self, output_dir):
+
+        self.output_dir = output_dir
+
+        if not self.is_corenlp_installed():
+
+            import stanza
+
+            stanza.install_corenlp()
+
+        self.client = CoreNLPClient(annotators=["openie"], be_quiet=False, threads=32)
+        self.client.annotate("Is the CoreNLP server running?")
+
+        self.article_paths   = list(itertools.chain.from_iterable([
+            [os.path.join(o1, p) for p in o3]
+            for o1, o2, o3 in os.walk(os.path.join(self.output_dir, 'pre_processed'))
+        ]))
+
+    def is_corenlp_installed(self):
+
+        corenlp_home = os.environ.get('CORENLP_HOME', os.path.expanduser('~/stanza_corenlp'))
+
+        return os.path.exists(corenlp_home)
+
+    """
+    def encode_text(self, text):
+
+        with CoreNLPClient(endpoint=self.client.endpoint, annotators=["openie"], be_quiet=True, start_server=False) as client:
+
+            ann     = client.annotate(text)
+            triples = []
+
+            for sentence in ann.sentence:
+
+                for triple in sentence.openieTriple:
+
+                    triples.append({
+                        'subject':    triple.subject,
+                        'relation':   triple.relation,
+                        'object':     triple.object,
+                        'confidence': triple.confidence
+                    })
+
+            return triples
+    """
+
     def encode_article(self, path):
 
         try:
@@ -62,7 +87,9 @@ class OpenIETripleGenerator:
             if os.path.exists(output_file): return True
 
             article_text   = article['text']
-            openie_triples = self.encode_text(article_text)
+            """openie_triples = self.encode_text(article_text)"""
+
+            openie_triples = encode_text(article_text)
 
             openie_dict_str = json.dumps({
                 'uid':     article['uid'],
@@ -80,7 +107,7 @@ class OpenIETripleGenerator:
 
     def encode(self):
 
-        pool = Pool(multiprocessing.cpu_count() - 8)
+        pool = Pool(int(self.client.server.args[self.client.server.args.index('-threads') + 1]))
 
         for i in tqdm(
                 pool.imap_unordered(self.encode_article, self.article_paths),

@@ -26,8 +26,8 @@ class PKGDataset(Dataset):
 
                 with open(f, 'rb') as _: micro_pkg = pickle.load(_)
 
-                if   'Fake' in f: label = 1
-                elif 'Real' in f: label = 0
+                if   'Unreliable' in f: label = 1
+                elif 'Reliable' in f: label = 0
 
                 triples_list = []
 
@@ -65,14 +65,16 @@ class PKGDataset(Dataset):
             pkg_embeddings:PKGEmbeddings,
             root,
             filename,
-            transform     = None,
-            pre_transform = None
+            transform         = None,
+            pre_transform     = None,
+            ignore_embeddings = False
     ):
 
-        self.filename       = filename
-        self.pkg_embeddings = pkg_embeddings
+        self.filename          = filename
+        self.pkg_embeddings    = pkg_embeddings
+        self.ignore_embeddings = ignore_embeddings
 
-        super(PKGDataset, self).__init__(root, transform, pre_transform)
+        super().__init__(root, transform, pre_transform)
 
     @property
     def raw_file_names(self): return self.filename
@@ -136,9 +138,15 @@ class PKGDataset(Dataset):
             if e[0] not in self.pkg_embeddings.id_to_entity: continue
             if e[2] not in self.pkg_embeddings.id_to_entity: continue
 
-            _.add_node(e[0], v       = self.pkg_embeddings.get_entity_vector_by_str(e[0]))
-            _.add_node(e[2], v       = self.pkg_embeddings.get_entity_vector_by_str(e[2]))
-            _.add_edge(e[0], e[2], v = self.pkg_embeddings.get_relation_vector_by_str(e[1]))
+            if self.ignore_embeddings:
+                _.add_node(e[0],       v=numpy.zeros(200))
+                _.add_node(e[2],       v=numpy.zeros(200))
+                _.add_edge(e[0], e[2], v=numpy.zeros(200))
+
+            else:
+                _.add_node(e[0], v       = self.pkg_embeddings.get_entity_vector_by_str(e[0]))
+                _.add_node(e[2], v       = self.pkg_embeddings.get_entity_vector_by_str(e[2]))
+                _.add_edge(e[0], e[2], v = self.pkg_embeddings.get_relation_vector_by_str(e[1]))
 
         return _.copy()
 

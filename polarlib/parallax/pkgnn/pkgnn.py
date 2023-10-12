@@ -21,6 +21,8 @@ from torch_geometric.loader import DataLoader
 import torch.nn as nn
 from torch_geometric.nn import GCNConv, global_mean_pool
 
+from sklearn.model_selection import StratifiedShuffleSplit
+
 from torch.nn import Linear
 import torch.nn.functional as F
 
@@ -29,6 +31,20 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.autograd.set_detect_anomaly(True)
 
 from torch.nn.utils.rnn import pad_sequence
+
+def stratified_split(dataset, test_ratio=0.2, random_state=11):
+    # Extract labels
+    labels = [sample.y.item() for sample in dataset]
+
+    # Create stratified split
+    sss = StratifiedShuffleSplit(n_splits=1, test_size=test_ratio, random_state=random_state)
+    train_idx, test_idx = next(sss.split(labels, labels))
+
+    # Create train and test datasets
+    train_dataset = [dataset[i] for i in train_idx]
+    test_dataset = [dataset[i] for i in test_idx]
+
+    return train_dataset, test_dataset
 
 def custom_collate(batch):
 
@@ -39,7 +55,7 @@ def custom_collate(batch):
 
     return padded_sequences, labels
 
-class TrainingSession:
+class TrainingSession(object):
 
     @staticmethod
     def fit(params, dataset:PKGDataset, train_dataset:PKGDataset, test_dataset:PKGDataset, epochs=100):
@@ -284,15 +300,15 @@ class TrainingSession:
     def count_parameters(model): return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     @staticmethod
-    def hyperparameter_tuning(trials=50, dataset=None):
+    def hyperparameter_tuning(trials=10, dataset=None):
 
         def objective(trial):
 
             params = {
-                "weight_decay":          0.00001,
+                "weight_decay":          0.01,
                 "model_attention_heads": trial.suggest_categorical("model_attention_heads", [1, 2, 3]),
                 "pos_weight" :           1.0,
-                "batch_size":            trial.suggest_categorical("batch_size",            [4, 8, 16]),
+                "batch_size":            trial.suggest_categorical("batch_size",            [32, 64, 128]),
                 "model_dropout_rate":    trial.suggest_categorical("model_dropout_rate",    [0.1, 0.2, 0.3]),
                 "scheduler_gamma":       trial.suggest_categorical("scheduler_gamma",       [0.8, 0.9]),
                 "sgd_momentum":          trial.suggest_categorical("sgd_momentum",          [0.2, 0.5, 0.8]),
@@ -308,7 +324,12 @@ class TrainingSession:
 
             print(json.dumps(params, indent=4))
 
-            train_dataset, test_dataset = dataset.split_train_test(test_ratio=0.20, batch_size=params["batch_size"])
+            ##############################################################################################################
+            # train_dataset, test_dataset = dataset.split_train_test(test_ratio=0.20, batch_size=params["batch_size"], ) #
+            ##############################################################################################################
+
+            print('Stratified sampling.')
+            train_dataset, test_dataset = stratified_split(dataset, test_ratio=0.33, random_state=11)
 
             params["model_edge_dim"] = train_dataset[0].edge_attr.shape[1]
 
@@ -391,14 +412,17 @@ class TrainingSession:
 
 class PKGNN(torch.nn.Module):
 
-    def __init__(self, dataset, model_params):
-        super(PKGNN, self).__init__()
+    def __init__(self, dataset, model_params, ignore_features=False):
+
+        super().__init__()
 
         embedding_size     = model_params["model_embedding_size"]
         n_heads            = model_params["model_attention_heads"]
         dropout_rate       = model_params["model_dropout_rate"]
         dense_neurons      = model_params["model_dense_neurons"]
         edge_dim           = model_params["model_edge_dim"]
+
+        self.ignore_features = ignore_features
 
         self.n_layers      = model_params["model_layers"]
 
@@ -441,6 +465,10 @@ class PKGNN(torch.nn.Module):
     def forward(self, data):
 
         x, edge_index, edge_attr, batch = data.x, data.edge_index, data.edge_attr, data.batch
+
+        if self.ignore_features:
+            x         = torch.ones_like(x)
+            edge_attr = torch.ones_like(edge_attr)
 
         x = self.conv1(x, edge_index, edge_attr)
         x = torch.relu(self.transf1(x))

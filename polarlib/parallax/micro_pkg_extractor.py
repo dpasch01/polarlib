@@ -161,7 +161,11 @@ class MicroPKGExtractor:
             keywords     = []
         )
 
-        corpus_collector.pre_process_articles()
+        t1 = time.time()
+
+        if verbose: print('Done.', t1 - t0)
+
+        corpus_collector.pre_process_article(os.path.join(out, f'{uid}.json'))
 
         t1 = time.time()
 
@@ -176,7 +180,15 @@ class MicroPKGExtractor:
             entity_set = set(self.pkg_entity_set)
         )
 
-        entity_extractor.extract_entities()
+        t1 = time.time()
+
+        if verbose: print('Done.', t1 - t0)
+
+        if len(entity_extractor.article_paths) == 0:
+            print('`Entity Extractor` couldn\'t locate a file to parse.')
+            return None
+
+        entity_extractor.extract_article_entities(entity_extractor.article_paths[0])
 
         t1 = time.time()
 
@@ -188,7 +200,15 @@ class MicroPKGExtractor:
 
         noun_phrase_extractor = NounPhraseExtractor(output_dir = output_dir)
 
-        noun_phrase_extractor.extract_noun_phrases()
+        t1 = time.time()
+
+        if verbose: print('Done.', t1 - t0)
+
+        if len(noun_phrase_extractor.entity_paths) == 0:
+            print('`Noun Phrase Extractor` couldn\'t locate a file to parse.')
+            return None
+
+        noun_phrase_extractor.extract_article_noun_phrases(noun_phrase_extractor.entity_paths[0])
 
         t1 = time.time()
 
@@ -204,7 +224,17 @@ class MicroPKGExtractor:
             mpqa_path   = self.mpqa_path
         )
 
-        sentiment_attitude_pipeline.calculate_sentiment_attitudes()
+        t1 = time.time()
+
+        if verbose: print('Done.', t1 - t0)
+
+        if len(sentiment_attitude_pipeline.noun_phrase_path_list) == 0:
+            print('`Sentiment Attitude Pipeline` couldn\'t locate a file to parse.')
+            return None
+
+        sentiment_attitude_pipeline.extract_sentiment_attitude(
+            sentiment_attitude_pipeline.noun_phrase_path_list[0]
+        )
 
         t1 = time.time()
 
@@ -216,7 +246,19 @@ class MicroPKGExtractor:
 
         sag_generator = SAGGenerator(output_dir)
 
-        sag_generator.load_sentiment_attitudes()
+        t1 = time.time()
+
+        if verbose: print('Done.', t1 - t0)
+
+        if len(sag_generator.attitude_path_list) == 0:
+            print('`SAG Generator` couldn\'t locate a file to parse.')
+            return None
+
+        sag_generator._read_sentiment_attitudes(sag_generator.attitude_path_list[0])
+
+        t1 = time.time()
+
+        if verbose: print('Done.', t1 - t0)
 
         sag_generator.convert_attitude_signs(bin_category_mapping = bin_category_mapping)
 
@@ -375,8 +417,8 @@ class MicroPKGExtractor:
             article_dipole_set     = []
 
             for n, v in dict(micro_pkg.nodes(data=True)).items():
-                if v['type'] == 'Entity':
-                    article_entity_set.append(n)
+
+                if v['type'] == 'Entity': article_entity_set.append(n)
 
             for e in article_entity_set:
 
@@ -387,14 +429,20 @@ class MicroPKGExtractor:
                     attr_value='Fellowship'
                 )
 
-            for f in article_fellowship_set:
+            for f12 in itertools.combinations(article_fellowship_set, 2):
 
-                article_dipole_set += self._get_neighbors(
+                d_label_1 = 'D' + f12[0].replace('F', '') + '_' + f12[1].replace('F', '')
+                d_label_2 = 'D' + f12[1].replace('F', '') + '_' + f12[0].replace('F', '')
+
+                d1 = self._get_neighbors(
                     self.pkg.pkg,
-                    f,
+                    f12[0],
                     attr_label='type',
                     attr_value='Dipole'
                 )
+
+                if d_label_1 in d1: article_dipole_set.append(d_label_1)
+                if d_label_2 in d1: article_dipole_set.append(d_label_2)
 
             for e in self.pkg.pkg.subgraph(
                     article_topic_list + article_entity_set + article_fellowship_set + article_dipole_set
@@ -404,7 +452,7 @@ class MicroPKGExtractor:
                 n2    = e[1]
                 attrs = e[2]
 
-                if self.pkg.pkg.nodes[n1] == 'Topic'  or self.pkg.pkg.nodes[n2]  == 'Topic':    continue
+                if self.pkg.pkg.nodes[n1] == 'Topic'  or self.pkg.pkg.nodes[n2]  == 'Topic':  continue
                 if self.pkg.pkg.nodes[n1] == 'Entity' and self.pkg.pkg.nodes[n2] == 'Entity': continue
 
                 micro_pkg.add_edge(*e[:2], **e[2])

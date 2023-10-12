@@ -13,15 +13,20 @@ import os, pandas as pd, torch
 
 class PKGEmbeddings:
 
-    def __init__(self, output_dir, model_str='TuckER'):
+    def __init__(self, output_dir, embedding_dir=None, model_str='TuckER'):
 
         self.output_dir   = output_dir
         self.parallax_dir = os.path.join(output_dir, 'parallax')
         self.model_str    = model_str
 
-        self.entity_path    = os.path.join(self.parallax_dir, 'global/{}/training_triples/entity_to_id.tsv.gz'.format(self.model_str.lower()))
-        self.relation_path  = os.path.join(self.parallax_dir, 'global/{}/training_triples/relation_to_id.tsv.gz'.format(self.model_str.lower()))
-        self.emb_model_path = os.path.join(self.parallax_dir, 'global/{}/trained_model.pkl'.format(self.model_str.lower()))
+        if embedding_dir == None:
+            self.entity_path    = os.path.join(self.parallax_dir, 'global/{}/training_triples/entity_to_id.tsv.gz'.format(self.model_str.lower()))
+            self.relation_path  = os.path.join(self.parallax_dir, 'global/{}/training_triples/relation_to_id.tsv.gz'.format(self.model_str.lower()))
+            self.emb_model_path = os.path.join(self.parallax_dir, 'global/{}/trained_model.pkl'.format(self.model_str.lower()))
+        else:
+            self.entity_path = os.path.join(self.parallax_dir,    '{}/{}/training_triples/entity_to_id.tsv.gz'.format(embedding_dir, self.model_str.lower()))
+            self.relation_path = os.path.join(self.parallax_dir,  '{}/{}/training_triples/relation_to_id.tsv.gz'.format(embedding_dir, self.model_str.lower()))
+            self.emb_model_path = os.path.join(self.parallax_dir, '{}/{}/trained_model.pkl'.format(embedding_dir, self.model_str.lower()))
 
         self.entity_to_id   = pd.read_csv(self.entity_path,   compression='gzip', header=0, sep='\t', quotechar='"')
         self.relation_to_id = pd.read_csv(self.relation_path, compression='gzip', header=0, sep='\t', quotechar='"')
@@ -63,9 +68,9 @@ class PKGEmbedder:
 
         os.makedirs(self.parallax_dir, exist_ok=True)
 
-    def construct_embeddings(self, model_str='TuckER', evaluator_str='RankBasedEvaluator', epochs=5, training_loop_str='sLCWA'):
+    def construct_embeddings(self, model_str='TuckER', output_dir=None, schema_function=None, evaluator_str='RankBasedEvaluator', epochs=5, training_loop_str='sLCWA'):
 
-        pkg_triplet_list = self.get_pkg_triples()
+        pkg_triplet_list = self.get_pkg_triples(schema_function=schema_function)
         pkg_triplet_list = [(t['subject'], t['predicate'], t['object']) for t in pkg_triplet_list.T.to_dict().values()]
 
         tf = TriplesFactory.from_labeled_triples(numpy.asarray(pkg_triplet_list))
@@ -87,7 +92,8 @@ class PKGEmbedder:
             evaluator_kwargs     = {'batch_size': 256}
         )
 
-        result.save_to_directory(os.path.join(self.parallax_dir, 'global/{}'.format(model_str.lower())))
+        if output_dir == None: result.save_to_directory(os.path.join(self.parallax_dir, 'global/{}'.format(model_str.lower())))
+        else: result.save_to_directory(os.path.join(self.parallax_dir, '{}/{}'.format(output_dir, model_str.lower())))
 
         df = result.metric_results.to_df()
 
@@ -96,17 +102,26 @@ class PKGEmbedder:
 
         print(tabulate(df[df['Metric'] == 'adjusted_arithmetic_mean_rank'], headers = 'keys', tablefmt = 'psql'))
 
-    def get_pkg_triples(self, output=None):
+    def get_pkg_triples(self, schema_function=None, output=None):
 
         triples_list = []
 
         for e in self.pkg.pkg.edges(data=True):
 
-            triples_list.append({
-                'subject':   e[0],
-                'predicate': e[2]['label'].upper() if 'label' in e[2] else e[2]['type'].upper(),
-                'object':    e[1]
-            })
+            triples_list.append((e[0], e[2]['label'].upper() if 'label' in e[2] else e[2]['type'].upper(), e[1]))
+
+        if schema_function:
+
+            triples_list = schema_function(triples_list)
+
+        triples_list = [
+            {
+                'subject':   t[0],
+                'predicate': t[1],
+                'object':    t[2]
+            }
+            for t in triples_list if not t[1] == 'NEUTRAL'
+        ]
 
         df = pd.DataFrame.from_dict(triples_list)
 
