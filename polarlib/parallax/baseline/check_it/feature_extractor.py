@@ -1,4 +1,4 @@
-import pandas as pd, re, numpy, nltk, json, requests, string, itertools, spacy
+import pandas as pd, re, numpy, nltk, json, requests, string, itertools, spacy, pkg_resources
 
 from os import listdir
 from os.path import isfile, join
@@ -14,21 +14,21 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize, word_tokenize, TreebankWordTokenizer
 
-import linguistic_inquiry_word_count
-from surface import *
-from readability_index import *
-from vocabulary_richness import *
-from psychological import *
-from sentiment import *
-from part_of_speech import *
+from polarlib.parallax.baseline.check_it import linguistic_inquiry_word_count
+from polarlib.parallax.baseline.check_it.surface import *
+from polarlib.parallax.baseline.check_it.readability_index import *
+from polarlib.parallax.baseline.check_it.vocabulary_richness import *
+from polarlib.parallax.baseline.check_it.psychological import *
+from polarlib.parallax.baseline.check_it.sentiment import *
+from polarlib.parallax.baseline.check_it.part_of_speech import *
 
-from wnaffect import WNAffect
-from emotion import Emotion
+# from polarlib.parallax.baseline.check_it.wnaffect import WNAffect
 
 from nltk.corpus import wordnet
 from afinn import Afinn
 from nltk.stem import WordNetLemmatizer
 
+nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
 
 def replace_special(text):
@@ -86,7 +86,9 @@ class CheckItFeatureExtractor:
 
         self.df['text']     = self.df['text'].apply(lambda t: pipeline_func(t, [replace_special, uncontract, lambda t: t.replace('\n', ' ')]))
 
-        self.liwc = linguistic_inquiry_word_count.LIWC("dictionaries/LIWC2015_English_Flat.dic")
+        self.liwc = linguistic_inquiry_word_count.LIWC(
+            pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/LIWC2015_English_Flat.dic')
+        )
 
         self. liwc_categories = []
 
@@ -98,53 +100,59 @@ class CheckItFeatureExtractor:
 
         self.treebank_tokenizer = TreebankWordTokenizer()
 
-        self.stopwords = set(stopwords.words('english'))
+        self.english_stopwords = set(stopwords.words('english'))
+
+        # pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/LIWC2015_English_Flat.dic')
 
         self.assertives_hooper1975 = []
-        with open('bias_related_lexicons/assertives_hooper1975.txt') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/bias_related_lexicons/assertives_hooper1975.txt')) as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.assertives_hooper1975.append(l)
 
         self.factives_hooper1975 = []
-        with open('bias_related_lexicons/factives_hooper1975.txt') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/bias_related_lexicons/factives_hooper1975.txt')) as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.factives_hooper1975.append(l)
 
         self.hedges_hyland2005 = []
-        with open('bias_related_lexicons/hedges_hyland2005.txt') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/bias_related_lexicons/hedges_hyland2005.txt')) as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.hedges_hyland2005.append(l)
 
         self.implicatives_karttunen1971 = []
-        with open('bias_related_lexicons/implicatives_karttunen1971.txt') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/bias_related_lexicons/implicatives_karttunen1971.txt')) as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.implicatives_karttunen1971.append(l)
 
         self.report_verbs = []
-        with open('bias_related_lexicons/report_verbs.txt') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/bias_related_lexicons/report_verbs.txt')) as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.report_verbs.append(l)
 
         self.positive_opinion = []
-        with open('opinion-lexicon-English/positive-words.txt') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/opinion-lexicon-English/positive-words.txt')) as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.positive_opinion.append(l)
 
         self.negative_opinion = []
-        with open('opinion-lexicon-English/negative-words.txt', encoding='ISO-8859-1') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/opinion-lexicon-English/negative-words.txt'), encoding='ISO-8859-1') as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.negative_opinion.append(l)
 
         self.bias_lexicon = []
-        with open('bias-lexicon/bias-lexicon.txt') as bl:
+        with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/bias-lexicon/bias-lexicon.txt')) as bl:
             for l in bl.readlines():
                 if not l[0]=='#' and len(l)>0: self.bias_lexicon.append(l)
 
-        self.wna        = WNAffect('wordnet-1.6/', 'wn-domains-3.2/')
+        # self.wna        = WNAffect('wordnet/', 'wn-domains-3.2/')
         self.afinn      = Afinn()
         self.lemmatizer = WordNetLemmatizer()
 
-        self.nrc_lexicon_df = pd.read_csv('dictionaries/NRC-emotion-lexicon-wordlevel-alphabetized-v0.92.txt', sep='\t')
+        self.nrc_lexicon_df = pd.read_csv(
+            pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/NRC-emotion-lexicon-wordlevel-alphabetized-v0.92.txt'),
+            sep   = '\t',
+            names = ['word', 'emotion', 'association']
+        )
         self.nrc_lexicon_dict    = {}
 
         for i in range(self.nrc_lexicon_df.shape[0]):
@@ -284,7 +292,7 @@ class CheckItFeatureExtractor:
         stopword_seq = []
 
         for token in tokens:
-            if token in stopwords: stopword_seq.append(token)
+            if token in self.english_stopwords: stopword_seq.append(token)
 
         return ' '.join(stopword_seq)
 
@@ -432,7 +440,10 @@ class CheckItFeatureExtractor:
         content_word_vectorizer.fit(self.df_content_pos_sequences)
         self.content_pos_ngrams_array = content_word_vectorizer.transform(self.df_content_pos_sequences)
 
-        self.content_pos_ngrams_features  = pd.DataFrame(self.content_pos_ngrams_array.todense(), columns=content_word_vectorizer.get_feature_names())
+        try: feature_names = content_word_vectorizer.get_feature_names_out()
+        except AttributeError: feature_names = content_word_vectorizer.get_feature_names()
+
+        self.content_pos_ngrams_features  = pd.DataFrame(self.content_pos_ngrams_array.todense(), columns=feature_names)
         self.content_pos_ngrams_features  = self.content_pos_ngrams_features.add_prefix('pos_ngrams_')
 
         self.df_content_stopword_sequences = self.df['text'].apply(self.stopword_sequence)
@@ -441,14 +452,19 @@ class CheckItFeatureExtractor:
 
         self.content_word_vectorizer = TfidfVectorizer(analyzer='word', min_df=5, max_df=.8, ngram_range=(1,3))
         self.content_word_vectorizer.fit(self.df_content_stopword_sequences)
-        self.content_stopword_ngrams_array = content_word_vectorizer.transform(self.df_content_stopword_sequences)
 
-        self.content_stopword_ngrams_features = pd.DataFrame(
-            self.content_stopword_ngrams_array.todense(),
-            columns=self.content_word_vectorizer.get_feature_names()
-        )
+        # self.content_stopword_ngrams_array = content_word_vectorizer.transform(self.df_content_stopword_sequences)
+        #
+        # try: feature_names = self.content_stopword_ngrams_array.get_feature_names_out()
+        # except AttributeError: feature_names = self.content_stopword_ngrams_array.get_feature_names()
+        #
+        # self.content_stopword_ngrams_features = pd.DataFrame(
+        #     self.content_stopword_ngrams_array.todense(),
+        #     columns=feature_names
+        # )
 
-        self.content_stopword_ngrams_features = self.content_stopword_ngrams_features.add_prefix('stopword_ngrams_')
+        # self.content_stopword_ngrams_features = self.content_stopword_ngrams_features.add_prefix('stopword_ngrams_')
+
         self.df_content_punctuation_sequences = self.df['text'].apply(punctuation_sequence)
         self.df_content_punctuation_sequences = self.df_content_punctuation_sequences.replace(numpy.nan, '', regex=True)
 
@@ -456,7 +472,10 @@ class CheckItFeatureExtractor:
         self.content_punctuation_vectorizer.fit(self.df_content_punctuation_sequences)
         self.content_punctuation_ngram_array = self.content_punctuation_vectorizer.transform(self.df_content_punctuation_sequences)
 
-        self.content_punctuation_ngram_features = pd.DataFrame(self.content_punctuation_ngram_array.todense(), columns=self.content_punctuation_vectorizer.get_feature_names())
+        try: feature_names = self.content_punctuation_vectorizer.get_feature_names_out()
+        except AttributeError: feature_names = self.content_punctuation_vectorizer.get_feature_names()
+
+        self.content_punctuation_ngram_features = pd.DataFrame(self.content_punctuation_ngram_array.todense(), columns=feature_names)
         self.content_punctuation_ngram_features = self.content_punctuation_ngram_features.add_prefix('punctuation_ngrams_')
 
         self.content_sentences = self.df['text'].apply(self.sentence_tokenizer)
@@ -470,6 +489,6 @@ class CheckItFeatureExtractor:
         f_dict = self.content_linguistic_features.T.to_dict()
         f_dict = list(f_dict.values())
 
-        self.content_linguistic_features_df = pd.DataFrame.from_dict(list(self.content_linguistic_features.values))
+        self.content_linguistic_features_df = pd.DataFrame.from_dict(f_dict)
 
         return self.content_linguistic_features_df

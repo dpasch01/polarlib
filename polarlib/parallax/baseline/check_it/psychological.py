@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
+
 from __future__ import division
 import nltk, string, math, csv, parse, os, random, re, numpy, sys, yaml
 from pprint import pprint
 from nltk.stem.porter import PorterStemmer
 from itertools import groupby
 from gensim.parsing.preprocessing import stem_text
+
+import pkg_resources
 
 pos = set() 
 neg =  set()
@@ -24,21 +27,23 @@ hiliu_pos = set()
 
 affin = {}
 
-posfile = open('dictionaries/positive.csv', 'r')
-negfile = open('dictionaries/negative.csv', 'r')
-litfile = open('dictionaries/litigious.csv', 'r')
-unfile = open('dictionaries/uncertainty.csv', 'r')
-weakfile = open('dictionaries/modalWeak.csv', 'r')
-strongfile = open('dictionaries/modalStrong.csv', 'r')
 
-slangfile = open('dictionaries/slang.csv', 'r')
-badfile = open('dictionaries/badwords.csv', 'r')
-commonfile = open('dictionaries/commonwords.csv', 'r')
-emotonefile = open('dictionaries/emotionaltonewords.csv', 'r')
-emotionsfile = open('dictionaries/emotionwords.csv', 'r')
-hiliu_negfile = open('dictionaries/hu_liu_negative.csv', 'r')
-hiliu_posfile = open('dictionaries/hu_liu_positive.csv', 'r')
-afinnfile = open('dictionaries/afinn.csv', 'r')
+
+posfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/positive.csv'), 'r')
+negfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/negative.csv'), 'r')
+litfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/litigious.csv'), 'r')
+unfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/uncertainty.csv'), 'r')
+weakfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/modalWeak.csv'), 'r')
+strongfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/modalStrong.csv'), 'r')
+
+slangfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/slang.csv'), 'r')
+badfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/badwords.csv'), 'r')
+commonfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/commonwords.csv'), 'r')
+emotonefile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/emotionaltonewords.csv'), 'r')
+emotionsfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/emotionwords.csv'), 'r')
+hiliu_negfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/hu_liu_negative.csv'), 'r')
+hiliu_posfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/hu_liu_positive.csv'), 'r')
+afinnfile = open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/afinn.csv'), 'r')
 
 reader1 = csv.reader(posfile)
 reader2 = csv.reader(negfile)
@@ -116,18 +121,18 @@ mcdonald = {}
 lg = {}
 rid = {}
 
-with open("dictionaries/loughran_mcdonald.yml", 'r') as mcdonald_yml:
+with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/loughran_mcdonald.yml'), 'r') as mcdonald_yml:
 	try:
-		yamlfile = yaml.load(mcdonald_yml)
+		yamlfile = yaml.load(mcdonald_yml, Loader=yaml.SafeLoader)
 		for i in yamlfile:
 			for key in i:
 				mcdonald[key.lower()] = [process(w) for w in i.get(key)]
 	except yaml.YAMLError as exc:
 		print(exc)
 
-with open("dictionaries/laver-garry.yml", 'r') as lg_yml:
+with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/laver-garry.yml'), 'r') as lg_yml:
 	try:
-		yamlfile= yaml.load(lg_yml)
+		yamlfile= yaml.load(lg_yml, Loader=yaml.SafeLoader)
 		for i in yamlfile:
 			for key in i:
 				lg[key.lower()] = []
@@ -140,9 +145,9 @@ with open("dictionaries/laver-garry.yml", 'r') as lg_yml:
 	except yaml.YAMLError as exc:
 		print(exc)
 
-with open("dictionaries/rid.yml", 'r') as rid_yml:
+with open(pkg_resources.resource_filename('polarlib', 'parallax/baseline/check_it/dictionaries/rid.yml'), 'r') as rid_yml:
 	try:
-		yamlfile= yaml.load(rid_yml)
+		yamlfile= yaml.load(rid_yml, Loader=yaml.SafeLoader)
 		for i in yamlfile:
 			for key in i:
 				rid[key.lower()] = []

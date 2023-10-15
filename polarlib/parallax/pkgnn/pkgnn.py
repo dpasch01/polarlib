@@ -58,7 +58,7 @@ def custom_collate(batch):
 class TrainingSession(object):
 
     @staticmethod
-    def fit(params, dataset:PKGDataset, train_dataset:PKGDataset, test_dataset:PKGDataset, epochs=100):
+    def fit(params, dataset:PKGDataset, train_dataset:PKGDataset, test_dataset:PKGDataset, epochs=100, article_feature_dict=None):
 
         history = []
 
@@ -69,7 +69,7 @@ class TrainingSession(object):
 
         # Loading the model
         model_params = {k: v for k, v in params.items() if k.startswith("model_")}
-        model = PKGNN(dataset=dataset, model_params=model_params)
+        model = PKGNN(dataset=dataset, model_params=model_params, article_feature_dict=article_feature_dict)
         model = model.to(DEVICE)
 
         print()
@@ -300,7 +300,7 @@ class TrainingSession(object):
     def count_parameters(model): return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     @staticmethod
-    def hyperparameter_tuning(trials=10, dataset=None):
+    def hyperparameter_tuning(trials=10, dataset=None, article_feature_dict=None):
 
         def objective(trial):
 
@@ -331,13 +331,25 @@ class TrainingSession(object):
             print('Stratified sampling.')
             train_dataset, test_dataset = stratified_split(dataset, test_ratio=0.33, random_state=11)
 
+            for i,d in enumerate(train_dataset):
+
+                if d.path not in article_feature_dict: train_dataset[i] = None
+
+            train_dataset = [d for d in train_dataset if d]
+
+            for i,d in enumerate(test_dataset):
+
+                if d.path not in article_feature_dict: test_dataset[i] = None
+
+            test_dataset = [d for d in test_dataset if d]
+
             params["model_edge_dim"] = train_dataset[0].edge_attr.shape[1]
 
             train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], collate_fn=custom_collate, shuffle=True, drop_last=True)
             test_loader  = DataLoader(test_dataset, batch_size=params["batch_size"], collate_fn=custom_collate, shuffle=False, drop_last=True)
 
             model_params = {k: v for k, v in params.items() if k.startswith("model_")}
-            model = PKGNN(dataset=dataset, model_params=model_params)
+            model = PKGNN(dataset=dataset, model_params=model_params, article_feature_dict=article_feature_dict)
             model        = model.to(DEVICE)
 
             loss_fn   = torch.nn.CrossEntropyLoss()
@@ -412,9 +424,17 @@ class TrainingSession(object):
 
 class PKGNN(torch.nn.Module):
 
-    def __init__(self, dataset, model_params, ignore_features=False):
+    def __init__(self, dataset, model_params, ignore_features=False, article_feature_dict=None):
 
         super().__init__()
+
+        self.feature_dict = article_feature_dict
+
+        if self.feature_dict: model_params['model_additional_features'] = len(next(iter(article_feature_dict.values())))
+
+        if 'model_additional_features' not in model_params: model_params['model_additional_features'] = 0
+
+        print(json.dumps(model_params, indent=4))
 
         embedding_size     = model_params["model_embedding_size"]
         n_heads            = model_params["model_attention_heads"]
@@ -458,7 +478,11 @@ class PKGNN(torch.nn.Module):
             self.transf_layers.append(Linear(embedding_size*n_heads, embedding_size))
             self.bn_layers.append(BatchNorm1d(embedding_size))
 
-        self.linear1 = Linear(embedding_size * 2, dense_neurons)
+        self.feature_bn = BatchNorm1d(model_params['model_additional_features'])
+
+        self.feature_dimensions = model_params['model_additional_features']
+
+        self.linear1 = Linear(embedding_size * 2 + model_params['model_additional_features'], dense_neurons)
         self.linear2 = Linear(dense_neurons, int(dense_neurons/2))
         self.linear3 = Linear(int(dense_neurons/2), dataset.num_classes)
 
@@ -488,6 +512,13 @@ class PKGNN(torch.nn.Module):
             ], dim=1))
 
         x = sum(global_representation)
+
+        if self.feature_dimensions > 0:
+
+            additional_features = torch.FloatTensor([self.feature_dict[p] for p in data.path]).cuda()
+            additional_features = self.feature_bn(additional_features)
+
+            x = torch.cat((x, additional_features), -1)
 
         x = torch.relu(self.linear1(x))
         x = F.dropout(x, p=0.2, training=self.training)
