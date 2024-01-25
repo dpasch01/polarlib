@@ -89,7 +89,7 @@ class NewsCorpusCollector:
 
         self.config = Config()
         self.config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
-        self.config.request_timeout = 3
+        self.config.request_timeout = 10
 
     def collect_archives(self):
         """
@@ -161,7 +161,7 @@ class NewsCorpusCollector:
         :param nlp_flag: Flag to indicate NLP processing.
         :return: Parsed article object.
         """
-        article = Article(article_url, config=self.config)
+        article = Article(article_url, config=self.config, memoize_articles=False, language='en')
         article.download()
 
         if parse_flag: article.parse()
