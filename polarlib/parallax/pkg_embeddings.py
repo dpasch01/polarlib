@@ -97,7 +97,9 @@ class PKGEmbedder:
 
         df = result.metric_results.to_df()
 
-        df = df[df['Type'] == 'realistic']
+        print(df.columns)
+
+        # df = df[df['Type'] == 'realistic']
         df = df[df['Side'] == 'both']
 
         print(tabulate(df[df['Metric'] == 'adjusted_arithmetic_mean_rank'], headers = 'keys', tablefmt = 'psql'))
@@ -108,7 +110,7 @@ class PKGEmbedder:
 
         for e in self.pkg.pkg.edges(data=True):
 
-            triples_list.append((e[0], e[2]['label'].upper() if 'label' in e[2] else e[2]['type'].upper(), e[1]))
+            triples_list.append((e[0], e[2]['predicate'].upper() if 'predicate' in e[2] else e[2]['type'].upper(), e[1]))
 
         if schema_function:
 

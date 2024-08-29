@@ -1,7 +1,6 @@
 from multiprocessing import Pool
 
-import itertools
-import multiprocessing
+import itertools, json, multiprocessing
 import nltk
 import os
 import requests
@@ -14,8 +13,9 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from spotlight import SpotlightException
 from tqdm import tqdm
 
-from polarlib.utils.utils import *
+from collections import defaultdict
 
+from polarlib.utils.utils import *
 
 class EntityExtractor:
     """
@@ -36,8 +36,9 @@ class EntityExtractor:
         Args:
             output_dir (str): The directory where the output data will be stored.
         """
-        self.output_dir      = output_dir
-        self.entity_set      = entity_set
+        self.output_dir = output_dir
+        self.entity_set = entity_set
+        self.spacy_nlp  = spacy.load("en_core_web_sm")
 
         self.article_paths   = list(itertools.chain.from_iterable([
             [os.path.join(o1, p) for p in o3]
@@ -45,6 +46,71 @@ class EntityExtractor:
         ]))
 
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+
+    def _get_named_entities(self, text):
+
+        """ner_types = ['PERSON', 'LOC', 'NORP', 'ORG', 'GPE', 'PRODUCT', 'EVENT', 'WORK_OF_ART', 'LAW']"""
+
+        ner_types   = ['PERSON', 'NORP', 'ORG', 'GPE']
+
+        ner_pairs = []
+
+        doc = self.spacy_nlp(text)
+
+        for np in doc.noun_chunks:
+
+            for e in np.ents:
+
+                if e.label_ in ner_types: ner_pairs.append({
+                    'text': e.text,
+                    'start': e.start_char,
+                    'end': e.end_char
+                })
+
+        return ner_pairs
+
+    def _get_entity_mention(self, text):
+
+        dbpedia_mentions = defaultdict(lambda: [])
+
+        e_list = self._get_named_entities(text)
+        t      = ' and '.join([e['text'] for e in e_list])
+
+        if len(t) == 0: return None
+
+        dbpedia_entities = self.query_dbpedia_entities(t, confidence=0.45)
+
+        _entities = []
+
+        for e1 in e_list:
+
+            e1_interval = set(range(e1['start'], e1['end']))
+
+            for e2 in dbpedia_entities:
+
+                e2_interval = set(range(e2['begin'], e2['end']))
+
+                if len(e1_interval.intersection(e2_interval)) > 0: _entities.append(e2)
+
+        return _entities
+
+    def _get_entity_mentionv2(self, text, dbpedia_entities):
+
+        e_list = self._get_named_entities(text)
+
+        _entities = []
+
+        for e1 in e_list:
+
+            e1_interval = set(range(e1['start'], e1['end']))
+
+            for e2 in dbpedia_entities:
+
+                e2_interval = set(range(e2['begin'], e2['end']))
+
+                if len(e1_interval.intersection(e2_interval)) > 0: _entities.append(e2)
+
+        return _entities
 
     def query_dbpedia_entities(self, text, confidence=0.45, spotlight_url='http://127.0.0.1:2222/rest/annotate'):
         """
@@ -59,6 +125,7 @@ class EntityExtractor:
             list: A list of dictionaries representing extracted entities.
         """
         req_data      = {'lang': 'en', 'text': str(text), 'confidence': confidence, 'types': ['']}
+
         spot_entities = requests.post(spotlight_url, data=req_data, headers={"Accept": "application/json"})
 
         try:
@@ -124,7 +191,9 @@ class EntityExtractor:
 
                 s_range_set = set(list(range(from_i, to_i)))
 
-                for e in entity_list:
+                s_entity_list = self._get_entity_mentionv2(s, entity_list)
+
+                for e in s_entity_list:
 
                     if e == None or (self.entity_set and e['title'] not in self.entity_set): continue
 
@@ -148,16 +217,16 @@ class EntityExtractor:
 
         return True
 
-    def extract_entities(self):
+    def extract_entities(self, n_processes=32):
         """
         Extract entities from all articles using multiprocessing.
 
         This method uses multiprocessing to extract entities from multiple articles concurrently.
         """
-        pool = Pool(multiprocessing.cpu_count() - 8)
+        pool = Pool(n_processes)
 
         for i in tqdm(
-                pool.imap_unordered(self.extract_article_entities, self.article_paths),
+                pool.map(self.extract_article_entities, self.article_paths),
                 desc  = 'Identifying Article Entities',
                 total = len(self.article_paths)
         ): pass
@@ -332,13 +401,21 @@ if __name__ == "__main__":
 
     """python -m spacy download en_core_web_sm"""
 
-    nlp = spacy.load("en_core_web_sm")
-
     entity_extractor = EntityExtractor(output_dir   = "../example")
 
-    entity_extractor.extract_entities()
+    print(
+        json.dumps(
+            entity_extractor.extract_article_entities(
+                "/home/dpasch01/notebooks/PARALLAX/Infodemic/Coronavirus/pre_processed/20210525/www.state-journal.com.-news-coronavirus-pandemic-after-more-than-a-year-of-covid-government-meetings-will-be-in-person-soo.json"
+            ),
+            indent=4
+        )
+    )
 
+    "entity_extractor.extract_entities()"
+
+    """
     noun_phrase_extractor = NounPhraseExtractor(output_dir="../example")
 
     noun_phrase_extractor.extract_noun_phrases()
-
+    """

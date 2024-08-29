@@ -42,8 +42,11 @@ class PolarizationKnowledgeGraph:
             self.pkg.add_node(e1, type='Entity')
             self.pkg.add_node(e2, type='Entity')
 
-            self.pkg.add_edge(e1, e2, weight=w, type='Relationship', label='NEGATIVE' if w < 0 else 'POSITIVE')
-            self.pkg.add_edge(e2, e1, weight=w, type='Relationship', label='NEGATIVE' if w < 0 else 'POSITIVE')
+            if w < 0: predicate='OpposeEE'
+            else:     predicate='SupportEE'
+
+            self.pkg.add_edge(e1, e2, weight=w, type='Relationship', predicate=predicate, label='NEGATIVE' if w < 0 else 'POSITIVE')
+            self.pkg.add_edge(e2, e1, weight=w, type='Relationship', predicate=predicate, label='NEGATIVE' if w < 0 else 'POSITIVE')
 
         """Add the Entity-to-Topic Attitudes"""
 
@@ -139,9 +142,11 @@ class PolarizationKnowledgeGraph:
                 v = numpy.median(entity_topic_sentiment_attitude_dict[e][t])
                 s = convert_sentiment_attitude(v, sentiment_mapping)
 
+                predicate = 'OpposeET' if s == 'NEGATIVE' else 'SupportET' if s == 'POSITIVE' else None
+
                 if s == 'NEUTRAL': continue
 
-                self.pkg.add_edge(e, t, type='Attitude', weight=v, label=s, observations=len([v for v in entity_topic_sentiment_attitude_dict[e][t]]))
+                self.pkg.add_edge(e, t, type='Attitude', weight=v, label=s, predicate=predicate, observations=len([v for v in entity_topic_sentiment_attitude_dict[e][t]]))
 
         """Calculate Fellowship-to-Topic Attitudes"""
 
@@ -179,7 +184,7 @@ class PolarizationKnowledgeGraph:
 
                 if e not in sag_entity_list: continue
 
-                self.pkg.add_edge(e, f'F{f}', type='Member')
+                self.pkg.add_edge(e, f'F{f}', type='Member', predicate='MemberOf')
 
             for t in fellowship_topic_attitude_dict[f]:
 
@@ -190,7 +195,9 @@ class PolarizationKnowledgeGraph:
 
                 if s == 'NEUTRAL': continue
 
-                self.pkg.add_edge(f'F{f}', t, type='Collective_Attitude', weight=v, label=s)
+                predicate = 'OpposeFT' if s == 'NEGATIVE' else 'SupportFT' if s == 'POSITIVE' else None
+
+                self.pkg.add_edge(f'F{f}', t, type='Collective_Attitude', predicate=predicate, weight=v, label=s)
 
         """Fellowship Dipole Definition """
 
@@ -198,15 +205,15 @@ class PolarizationKnowledgeGraph:
 
             self.pkg.add_node(f'D{d[0][0]}_{d[0][1]}', type='Dipole')
 
-            self.pkg.add_edge(f'F{d[0][0]}', f'F{d[0][1]}', type='Conflict', positive_edges=d[1]['pos'], negative_edges=d[1]['neg'], frustration=d[1]['f_g'])
-            self.pkg.add_edge(f'F{d[0][0]}', f'D{d[0][0]}_{d[0][1]}', type='Part')
-            self.pkg.add_edge(f'F{d[0][1]}', f'D{d[0][0]}_{d[0][1]}', type='Part')
+            self.pkg.add_edge(f'F{d[0][0]}', f'F{d[0][1]}', type='Conflict', predicate='Conflict', positive_edges=d[1]['pos'], negative_edges=d[1]['neg'], frustration=d[1]['f_g'])
+            self.pkg.add_edge(f'F{d[0][0]}', f'D{d[0][0]}_{d[0][1]}', type='Part', predicate='PartOf')
+            self.pkg.add_edge(f'F{d[0][1]}', f'D{d[0][0]}_{d[0][1]}', type='Part', predicate='PartOf')
 
         polarization_indices = [a['pi_res'] if 'pi_res' in a else a['pi'] for a in self.attitude_list]
 
         bins = calculate_value_buckets(polarization_indices)
 
-        polarization_mapping      = {f'POLARIZATION{i + 1}': [b] for i, b in enumerate(bins)}
+        polarization_mapping      = {f'Polarization{i + 1}': [b] for i, b in enumerate(bins)}
         self.polarization_mapping = polarization_mapping
 
         #####################################################
@@ -222,7 +229,11 @@ class PolarizationKnowledgeGraph:
 
             p = a['pi_res'] if 'pi_res' in a else a['pi']
 
-            self.pkg.add_edge(d, t, type='Polarization', weight=p, observations=len(a['atts_fi']) + len(a['atts_fj']), label=convert_sentiment_attitude(p, polarization_mapping))
+            s = convert_sentiment_attitude(p, polarization_mapping)
+
+            if s == 'NEUTRAL': s = 'Polarization0'
+
+            self.pkg.add_edge(d, t, type='Polarization', weight=p, observations=len(a['atts_fi']) + len(a['atts_fj']), predicate=s, label=s)
 
     def get_node_by_type(self, type='Entity'): return [kv[0] for kv in dict(self.pkg.nodes(data=True)).items() if kv[1]['type'] == type]
 

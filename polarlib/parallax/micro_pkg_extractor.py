@@ -18,7 +18,10 @@ from sentence_transformers import SentenceTransformer
 
 class MicroPKGExtractor:
 
-    def __init__(self, pkg:PolarizationKnowledgeGraph, nlp, mpqa_path):
+    def __init__(self, pkg:PolarizationKnowledgeGraph, nlp, mpqa_path, entity_filter_list, entity_mapping_dict):
+
+        self.entity_filter_list  = entity_filter_list,
+        self.entity_mapping_dict = entity_mapping_dict
 
         self.pkg        = pkg
         self.nlp        = nlp
@@ -69,7 +72,9 @@ class MicroPKGExtractor:
         self.pkg_entity_set = []
 
         for n, v in dict(self.pkg.pkg.nodes(data=True)).items():
-            if v['type'] == 'Entity':
+            if not 'type' in v: continue
+
+            if v['type'] == 'Entity' and n in self.entity_filter_list:
                 self.pkg_entity_set.append(n)
 
     def _tokenize(self, text):
@@ -158,7 +163,8 @@ class MicroPKGExtractor:
             output_dir   = output_dir,
             from_date    = date(year = 2023, month = 8, day = 1),
             to_date      = date(year = 2023, month = 8, day = 25),
-            keywords     = []
+            keywords     = [],
+            domains      = None
         )
 
         t1 = time.time()
@@ -244,7 +250,7 @@ class MicroPKGExtractor:
 
         t0 = time.time()
 
-        sag_generator = SAGGenerator(output_dir)
+        sag_generator = SAGGenerator(output_dir, entity_filter_list=self.entity_filter_list, entity_merge_dict=self.entity_mapping_dict)
 
         t1 = time.time()
 
@@ -375,14 +381,20 @@ class MicroPKGExtractor:
 
             for kv in s['entity_attitudes']:
 
-                micro_pkg.add_node(kv[0], type='Entity')
-                micro_pkg.add_node(kv[1], type='Entity')
+                n1 = self.entity_mapping_dict.get(kv[0], kv[0])
+                n2 = self.entity_mapping_dict.get(kv[1], kv[1])
+
+                micro_pkg.add_node(n1, type='Entity')
+                micro_pkg.add_node(n2, type='Entity')
 
                 att = numpy.mean(s['entity_attitudes'][kv])
                 if att == 0: continue
 
-                micro_pkg.add_edge(kv[0], kv[1], weight=att, type='Relationship', label='NEGATIVE' if att < 0 else 'POSITIVE')
-                micro_pkg.add_edge(kv[1], kv[0], weight=att, type='Relationship', label='NEGATIVE' if att < 0 else 'POSITIVE')
+                if att < 0: predicate='OpposeEE'
+                else:       predicate='SupportEE'
+
+                micro_pkg.add_edge(n1, n2, weight=att, type='Relationship', predicate=predicate, label='NEGATIVE' if att < 0 else 'POSITIVE')
+                micro_pkg.add_edge(n2, n1, weight=att, type='Relationship', predicate=predicate, label='NEGATIVE' if att < 0 else 'POSITIVE')
 
             for kv in s['noun_phrase_attitudes']:
 
@@ -409,8 +421,12 @@ class MicroPKGExtractor:
                     att = numpy.mean(entity_topic_attitude_dict[e][t])
                     lbl = self.convert_sentiment_attitude(att, bin_category_mapping)
 
+                    if   lbl == 'NEGATIVE': predicate='OpposeET'
+                    elif lbl == 'POSITIVE': predicate='SupportET'
+                    else: continue
+
                     article_topic_list.append(t)
-                    micro_pkg.add_edge(e, t, type='Attitude', weight=att, label=lbl)
+                    micro_pkg.add_edge(e, t, type='Attitude', predicate=predicate, weight=att, label=lbl)
 
             article_entity_set     = []
             article_fellowship_set = []
@@ -418,9 +434,12 @@ class MicroPKGExtractor:
 
             for n, v in dict(micro_pkg.nodes(data=True)).items():
 
-                if v['type'] == 'Entity': article_entity_set.append(n)
+                if 'type' in v and v['type'] == 'Entity': article_entity_set.append(n)
 
             for e in article_entity_set:
+
+                e = self.entity_mapping_dict.get(e, e)
+                if not self.pkg.pkg.has_node(e): continue
 
                 article_fellowship_set += self._get_neighbors(
                     self.pkg.pkg,
@@ -450,6 +469,10 @@ class MicroPKGExtractor:
 
                 n1    = e[0]
                 n2    = e[1]
+
+                n1    = self.entity_mapping_dict.get(n1, n1)
+                n2    = self.entity_mapping_dict.get(n2, n2)
+
                 attrs = e[2]
 
                 if self.pkg.pkg.nodes[n1] == 'Topic'  or self.pkg.pkg.nodes[n2]  == 'Topic':  continue

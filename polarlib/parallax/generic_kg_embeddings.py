@@ -95,7 +95,7 @@ class GenericKGEmbedder:
 
         df = result.metric_results.to_df()
 
-        df = df[df['Type'] == 'realistic']
+        # df = df[df['Type'] == 'realistic']
         df = df[df['Side'] == 'both']
 
         print(tabulate(df[df['Metric'] == 'adjusted_arithmetic_mean_rank'], headers = 'keys', tablefmt = 'psql'))

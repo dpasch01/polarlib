@@ -27,7 +27,7 @@ class PKGDataset(Dataset):
                 with open(f, 'rb') as _: micro_pkg = pickle.load(_)
 
                 if   'Unreliable' in f: label = 1
-                elif 'Reliable' in f: label = 0
+                elif 'Reliable' in f:   label = 0
 
                 triples_list = []
 
@@ -35,8 +35,7 @@ class PKGDataset(Dataset):
 
                     predicate = None
 
-                    if   'label' in e[2]: predicate = e[2]['label']
-                    elif 'type' in e[2]:  predicate = e[2]['type']
+                    if   'predicate' in e[2]: predicate = e[2]['predicate']
 
                     triples_list.append((e[0], predicate.upper(), e[1]))
 
@@ -76,6 +75,8 @@ class PKGDataset(Dataset):
 
         super().__init__(root, transform, pre_transform)
 
+        print(filename)
+
     @property
     def raw_file_names(self): return self.filename
     def download(self):       pass
@@ -85,6 +86,8 @@ class PKGDataset(Dataset):
         self.data = pd.read_csv(self.raw_paths[0])
 
         index = 0
+
+        print(self.data.shape)
 
         for _index, entry in tqdm(self.data.iterrows(), total=self.data.shape[0]):
 

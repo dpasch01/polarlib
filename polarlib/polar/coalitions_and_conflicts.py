@@ -105,11 +105,12 @@ class FellowshipExtractor:
 
     def extract_fellowships(
             self,
-            n_iter     = 25,
-            resolution = 0.05,
-            merge_iter = 10,
-            jar_path   = './',
-            verbose    = False
+            n_iter      = 25,
+            resolution  = 0.05,
+            merge_iter  = 10,
+            jar_path    = './',
+            output_flag = True,
+            verbose     = False
     ):
 
         self.fellowships = self._extract_fellowships(
@@ -126,7 +127,9 @@ class FellowshipExtractor:
 
             for e in self.fellowships[0]: print('-', e)
 
-        with open(os.path.join(self.output_dir, 'polarization/fellowships.json'), 'w') as f: json.dump({'fellowships': self.fellowships}, f)
+        if output_flag:
+
+            with open(os.path.join(self.output_dir, 'polarization/fellowships.json'), 'w') as f: json.dump({'fellowships': self.fellowships}, f)
 
         return self.fellowships
 
@@ -147,7 +150,7 @@ class FellowshipExtractor:
             si_map_partitions = defaultdict(lambda: [])
 
             for k, v in si_map_0.items():             si_map_partitions[v].append(k)
-            for k in list(si_map_partitions.keys()): si_map_partitions[k] = list(si_map_partitions[k])
+            for k in list(si_map_partitions.keys()):  si_map_partitions[k] = list(si_map_partitions[k])
 
             si_map_partitions = dict(si_map_partitions)
 
@@ -315,7 +318,7 @@ class DipoleGenerator:
         with open(os.path.join(self.output_dir, 'polarization/' + 'sag.pckl'), 'rb') as f:         G = pickle.load(f)
         with open(os.path.join(self.output_dir, 'polarization/' + 'int_to_node.pckl'), 'rb') as f: int_to_node = pickle.load(f)
         with open(os.path.join(self.output_dir, 'polarization/' + 'node_to_int.pckl'), 'rb') as f: node_to_int = pickle.load(f)
-        with open(os.path.join(self.output_dir, 'fellowships.json'), 'r') as f:                    fellowship_list = json.load(f)['fellowships']
+        with open(os.path.join(self.output_dir, 'polarization/' + 'fellowships.json'), 'r') as f:                    fellowship_list = json.load(f)['fellowships']
 
         self.sag = G
         self.int_to_node = int_to_node
@@ -511,7 +514,7 @@ class TopicAttitudeCalculator:
     A class for calculating topic attitudes and polarization indices based on sentiment attitudes and dipole information.
     """
 
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, entity_filter_list=[], entity_merge_dict={}):
         """
         Initializes the TopicAttitudeCalculator with the specified output directory.
 
@@ -519,10 +522,13 @@ class TopicAttitudeCalculator:
         """
         self.output_dir = output_dir
 
+        self.entity_filter_list = entity_filter_list
+        self.entity_merge_dict  = entity_merge_dict
+
         with open(os.path.join(self.output_dir, 'polarization/' + 'sag.pckl'), 'rb') as f:         G = pickle.load(f)
         with open(os.path.join(self.output_dir, 'polarization/' + 'int_to_node.pckl'), 'rb') as f: int_to_node = pickle.load(f)
         with open(os.path.join(self.output_dir, 'polarization/' + 'node_to_int.pckl'), 'rb') as f: node_to_int = pickle.load(f)
-        with open(os.path.join(self.output_dir, 'fellowships.json'), 'r') as f:                    fellowship_list = json.load(f)['fellowships']
+        with open(os.path.join(self.output_dir, 'polarization/' + 'fellowships.json'), 'r') as f:  fellowship_list = json.load(f)['fellowships']
         with gzip.open(os.path.join(self.output_dir, 'topics.json.gz'), 'r') as f:            topics = json.load(f)
         with open(os.path.join(self.output_dir, 'polarization/' + 'dipoles.pckl'), 'rb') as f:     dipole_list = pickle.load(f)
 
@@ -570,7 +576,11 @@ class TopicAttitudeCalculator:
         dipole_dict = dipole_tuple[1]
         dipole_key = (fi, fj)
 
+        print(dipole_key)
+
         if dipole_key not in self.dipole_topics_dict: return []
+
+        print(dipole_key)
 
         fi_entities = dipole_dict['simap_1']
         fj_entities = dipole_dict['simap_2']
@@ -664,11 +674,14 @@ class TopicAttitudeCalculator:
                 noun_phrase_attitudes = r['noun_phrase_attitudes']
 
                 for (entity, np), attitudes in noun_phrase_attitudes.items():
+
+                    entity = self.entity_merge_dict.get(entity, entity)
+
+                    if self.entity_filter_list and entity not in self.entity_filter_list: continue
+
                     clean_np = self.clean_np_dict.get(np)
 
-                    # Skip if clean_np is not in clean_np_dict
-                    if not clean_np:
-                        continue
+                    if not clean_np: continue
 
                     if attitudes and not isinstance(attitudes[0], float):
                         sentiment_values = [
@@ -712,7 +725,8 @@ class TopicAttitudeCalculator:
 
         for entity in dipole_obj['d_ij'].nodes():
             entity_attitudes = entity_np_sentiment_attitudes.get(entity)
-            if not entity_attitudes:
+            if not entity_attitudes: 
+                print(f'No attitudes found for {entity}')
                 continue
 
             for np, att_obj in entity_attitudes.items():
@@ -725,6 +739,7 @@ class TopicAttitudeCalculator:
         }
 
         if not dipole_np_labels:
+            print('Not dipole NP labels found.\n')
             return None
 
         cluster_dict = defaultdict(list)
@@ -755,7 +770,9 @@ class TopicAttitudeCalculator:
 
             d_topics = self.extract_dipole_topics(dipole)
 
-            if not d_topics: continue
+            if not d_topics: 
+                 print('No topics found in dipole.')
+                 continue
 
             dipole_topics.append(d_topics)
 
@@ -804,6 +821,8 @@ class TopicAttitudeCalculator:
             dipole_topic_attitudes.append(self.undersample_dipole_attitudes(dipole, aggr_func))
 
         dipole_topic_attitudes = list(itertools.chain.from_iterable(dipole_topic_attitudes))
+
+        # print(dipole_topic_attitudes[0])
 
         filtered_topic_attitudes = []
 

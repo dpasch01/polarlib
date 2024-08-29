@@ -13,7 +13,7 @@ from polarlib.parallax.pkg_embeddings import PKGEmbeddings
 class GenericKGDataset(Dataset):
 
     @staticmethod
-    def convert_to_dataframe(micro_kg_path, output_dir):
+    def convert_to_dataframe(micro_kg_path, output_dir, class_map=None):
 
         df = []
 
@@ -31,6 +31,7 @@ class GenericKGDataset(Dataset):
 
                 if   'Unreliable' in f: label = 1
                 elif 'Reliable' in f:   label = 0
+                elif class_map:         label = class_map[f]
 
                 if len(triples_list) == 0:
 
@@ -88,9 +89,10 @@ class GenericKGDataset(Dataset):
             entry_pkg = self.get_nx(entry)
 
             number_of_edges = entry_pkg.number_of_edges()
+
             if number_of_edges == 0:
 
-                print(entry)
+                # print(entry)
                 continue
 
             node_list = node_list = sorted(entry_pkg.nodes())
@@ -100,6 +102,7 @@ class GenericKGDataset(Dataset):
             edge_index    = self._get_adjacency_info(entry_pkg, node_list)
 
             label         = self._get_labels(label)
+            if label == None: continue
 
             data = Data(
                 x          = node_features,
@@ -108,6 +111,10 @@ class GenericKGDataset(Dataset):
                 y          = label,
                 path       = path
             )
+
+            if data == None:
+                print('Data N/A.')
+                continue
 
             torch.save(data, os.path.join(self.processed_dir, f'data_{index}.pt'))
 

@@ -1,1 +1,1 @@
-from .pkgnn import TrainingSession, PKGNN
+from .pkgnn import TrainingSession, PKGNN, PKGNNv2
