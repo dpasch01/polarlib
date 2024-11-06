@@ -5,18 +5,24 @@ from collections import Counter
 from multiprocessing import Pool
 from tqdm import tqdm
 
+from collections import defaultdict
+
 class SAGGenerator:
 
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, entity_filter_list=None, entity_merge_dict={}):
         """
         Initialize the SAGGenerator.
 
         :param output_dir: The output directory where generated files will be stored.
         """
-        self.attitude_path_list           = []
-        self.output_dir                   = output_dir
-        self.pair_sentiment_attitude_dict = {}
-        self.bins                         = None
+        self.attitude_path_list                   = []
+        self.output_dir                           = output_dir
+        self.pair_sentiment_attitude_dict         = {}
+        self.encoded_pair_sentiment_attitude_dict = {}
+        self.bins                                 = None
+
+        self.entity_filter_list = entity_filter_list
+        self.entity_merge_dict  = entity_merge_dict
 
         for root, folders, files in os.walk(os.path.join(self.output_dir, 'attitudes')):
 
@@ -35,41 +41,59 @@ class SAGGenerator:
 
         return attidute_object['attitudes']
 
-    def load_sentiment_attitudes(self):
-        """
-        Load sentiment attitudes from multiple files in parallel and update the pair_sentiment_attitude_dict.
-        """
-        pool = Pool(multiprocessing.cpu_count() - 4)
+    def process_sentiment_attitudes(self, file_list):
+        pair_sentiment_attitude_dict = defaultdict(list)
 
-        for result in tqdm(
-                pool.imap_unordered(self._read_sentiment_attitudes, self.attitude_path_list),
-                desc  = 'Fetching Attitudes',
-                total = len(self.attitude_path_list)
-        ):
+        for attitude_path in file_list:
+            result = self._read_sentiment_attitudes(attitude_path)
+
             for r in result:
 
-                r = r['entity_attitudes']
+                entity_attitudes = r['entity_attitudes']
 
-                for p in r:
+                for p, attitudes in entity_attitudes.items():
 
-                    if p not in self.pair_sentiment_attitude_dict: self.pair_sentiment_attitude_dict[p] = []
+                    p = tuple(sorted([
+                        self.entity_merge_dict.get(p[0], p[0]),
+                        self.entity_merge_dict.get(p[1], p[1])
+                    ]))
 
-                    if len(r[p]) > 0 and not isinstance(r[p][0], float):
+                    if p[0] == p[1]: continue
 
-                        self.pair_sentiment_attitude_dict[p] += [
-                            0 if t['NEUTRAL'] > t['NEGATIVE'] and t['NEUTRAL'] > t['POSITIVE'] else \
-                                 t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] and t['POSITIVE'] > t['NEUTRAL'] else \
-                                -t['NEGATIVE'] for t in r[p]
-                        ]
+                    if self.entity_filter_list:
 
+                        if p[0] not in self.entity_filter_list or p[1] not in self.entity_filter_list: continue
+
+                    if attitudes and not isinstance(attitudes[0], float):
+                        pair_sentiment_attitude_dict[p].extend([
+                            0 if t['NEUTRAL'] > max(t['NEGATIVE'], t['POSITIVE']) else
+                            t['POSITIVE'] if t['POSITIVE'] > t['NEGATIVE'] else
+                            -t['NEGATIVE'] for t in attitudes
+                        ])
                     else:
+                        pair_sentiment_attitude_dict[p].extend(attitudes)
 
-                        self.pair_sentiment_attitude_dict[p] += r[p]
+        return pair_sentiment_attitude_dict
 
+    def load_sentiment_attitudes(self):
+        num_processes = min(multiprocessing.cpu_count(), len(self.attitude_path_list))
+        pool          = multiprocessing.Pool(num_processes)
+
+        chunk_size           = len(self.attitude_path_list) // num_processes
+        attitude_path_chunks = [self.attitude_path_list[i:i + chunk_size] for i in range(0, len(self.attitude_path_list), chunk_size)]
+
+        results = pool.map(self.process_sentiment_attitudes, attitude_path_chunks)
         pool.close()
         pool.join()
 
-    def calculate_attitude_buckets(self, verbose=False):
+        pair_sentiment_attitude_dict = defaultdict(list)
+        for result in results:
+            for k, v in result.items():
+                pair_sentiment_attitude_dict[k].extend(v)
+
+        self.pair_sentiment_attitude_dict = dict(pair_sentiment_attitude_dict)
+
+    def calculate_attitude_buckets(self, verbose=False, func=numpy.mean, filter_values=[]):
         """
         Calculate attitude buckets based on sentiment attitudes.
 
@@ -78,13 +102,18 @@ class SAGGenerator:
         """
         attitude_population_list = list(itertools.chain.from_iterable([list(v) for v in self.pair_sentiment_attitude_dict.values()]))
 
+        filtered_values = [a for a in attitude_population_list if a not in filter_values]
+
         if verbose:
 
-            print('Mean:', numpy.mean(attitude_population_list))
-            print('Std.:', numpy.std(attitude_population_list))
+            print('Mean:', numpy.mean(filtered_values))
+            print('Std.:', numpy.std(filtered_values))
             print()
 
-        (n, bins, patches) = plt.hist([numpy.mean(list(v)) for v in self.pair_sentiment_attitude_dict.values()], rwidth=0.95)
+        filtered_lists = [list(filter(lambda a: a not in filter_values, v)) for v in self.pair_sentiment_attitude_dict.values()]
+        non_empty_filtered_lists = [func(v) for v in filtered_lists if len(v) > 0]
+
+        (n, bins, patches) = plt.hist(non_empty_filtered_lists, rwidth=0.95)
 
         self.bins = bins
 
@@ -95,13 +124,13 @@ class SAGGenerator:
                 i = ij[0]
                 j = ij[1]
 
-                print(f'>= {i:<25} and < {j:<25}:', n[k])
+                print(f'{k}. >= {i:<25} and < {j:<25}:', n[k])
 
         self.bins = list(zip(bins[:-1], bins[1:]))
 
         return self.bins
 
-    def convert_attitude_signs(self, bin_category_mapping, minimum_frequency=5, verbose=False):
+    def convert_attitude_signs(self, bin_category_mapping, minimum_frequency=5, verbose=False, func=numpy.mean, filter_values=[]):
         """
         Convert sentiment attitudes to attitude signs based on bin category mapping.
 
@@ -110,47 +139,34 @@ class SAGGenerator:
         :param verbose: If True, print additional information.
         """
 
-        """
-        bin_category_mapping = {
-            "NEGATIVE":  [bins[0], bins[1], bins[2], bins[3]],
-            "NEUTRAL": [bins[4], bins[5]],
-            "POSITIVE": [bins[6], bins[7], bins[8], bins[9]]
-        }
-        :return:
-        """
+        ##############################################
+        # Pre-process bin_category_mapping to create #
+        # a direct mapping of bins to categories.    #
+        ##############################################
+
+        bin_to_category = {}
+        for category, category_bins in bin_category_mapping.items():
+            for b in category_bins: bin_to_category[b] = category
 
         def convert_sentiment_attitude(sentiment_value):
 
-            sentiment_category = "NEUTRAL"
+            for b, category in bin_to_category.items():
 
-            for category, category_bins in bin_category_mapping.items():
+                if b[0] <= sentiment_value < b[1]: return category
 
-                for b in category_bins:
+            return "NEUTRAL"
 
-                    if sentiment_value >= b[0] and sentiment_value < b[1]:
-                        sentiment_category = category
-                        break
+        insufficient_pairs = {k for k, v in self.pair_sentiment_attitude_dict.items() if len(v) < minimum_frequency}
 
-            return sentiment_category
-
-        pair_frequency_dict = {k: len(v) for k, v in self.pair_sentiment_attitude_dict.items()}
-        freq                = numpy.percentile(sorted(pair_frequency_dict.values()), 75)
-
-        insufficient_pair_list = []
-
-        for p, v in pair_frequency_dict.items():
-
-            if v < minimum_frequency: insufficient_pair_list.append(p)
-
-        self.pair_sentiment_attitude_dict = {
-            k: convert_sentiment_attitude(numpy.mean(v))
-            for k,v in tqdm(self.pair_sentiment_attitude_dict.items())
-            if k not in insufficient_pair_list
+        self.encoded_pair_sentiment_attitude_dict = {
+            k: convert_sentiment_attitude(func([a for a in v if a not in filter_values])) if len([a for a in v if a not in filter_values]) != 0 else 'NEUTRAL'
+            for k, v in tqdm(self.pair_sentiment_attitude_dict.items())
+            if k not in insufficient_pairs
         }
 
         if verbose:
 
-            for l, f in Counter(list(self.pair_sentiment_attitude_dict.values())).most_common():
+            for l, f in Counter(self.encoded_pair_sentiment_attitude_dict.values()).most_common():
 
                 print('{0:20} {1}'.format(l, f))
 
@@ -160,18 +176,19 @@ class SAGGenerator:
 
         :return: The constructed SAG, node mappings, and edge weights.
         """
-        pair_frequency_dict                  = {k: len(v) for k, v in self.pair_sentiment_attitude_dict.items()}
+
+        pair_frequency_dict                  = {k: len(v) for k, v in self.encoded_pair_sentiment_attitude_dict.items()}
         G, node_id, node_to_int, int_to_node = nx.Graph(), 0, {}, {}
 
         for p in tqdm(
                 sorted(
-                    self.pair_sentiment_attitude_dict.keys(),
+                    self.encoded_pair_sentiment_attitude_dict.keys(),
                     key     = lambda k: pair_frequency_dict[k],
                     reverse = True
                 )
         ):
 
-            sentiment = self.pair_sentiment_attitude_dict[p]
+            sentiment = self.encoded_pair_sentiment_attitude_dict[p]
 
             if sentiment == "NEUTRAL": continue
 

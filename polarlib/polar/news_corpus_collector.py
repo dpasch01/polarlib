@@ -21,7 +21,6 @@ GDELT_FIELDS = [
     'actiongeo_adm1code', 'actiongeo_lat', 'actiongeo_long', 'actiongeo_featureid', 'dateadded', 'sourceurl'
 ]
 
-
 class URLKeywordExtractor:
 
     def __init__(self, url_list):
@@ -60,10 +59,9 @@ class URLKeywordExtractor:
 
         return [k[0] for k in keyword_list]
 
-
 class NewsCorpusCollector:
 
-    def __init__(self, output_dir, from_date, to_date, keywords):
+    def __init__(self, output_dir, from_date, to_date, keywords, domains):
         """
         Initialize the NewsCorpusGenerator.
 
@@ -78,6 +76,7 @@ class NewsCorpusCollector:
         self.duration = self.to_date - self.from_date
         self.duration = self.duration.days + 1
         self.keywords = keywords
+        self.domains = domains
 
         if os.path.isdir(self.output_dir):
             print('Warning: Path \'%s\' already exists.' % self.output_dir)
@@ -89,7 +88,7 @@ class NewsCorpusCollector:
 
         self.config = Config()
         self.config.browser_user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
-        self.config.request_timeout = 10
+        self.config.request_timeout = 3
 
     def collect_archives(self):
         """
@@ -101,7 +100,9 @@ class NewsCorpusCollector:
 
             if os.path.exists(os.path.join(self.output_dir, 'dumps/{}.export.CSV.zip'.format(d_str))): continue
 
-            wget.download(GDELT_BASE.format(d_str), out=os.path.join(self.output_dir, 'dumps'))
+            print(GDELT_BASE.format(d_str))
+
+            wget.download(GDELT_BASE.format(d_str), out=os.path.join(self.output_dir, 'dumps/'))
 
         return
 
@@ -176,6 +177,9 @@ class NewsCorpusCollector:
         :param path: path to the article .json file
         :return: Boolean
         """
+
+        if not path.endswith('.json'): return False
+
         with open(path, 'r') as f: article_obj = json.load(f)
 
         article_dict_str = json.dumps({
@@ -319,9 +323,18 @@ class NewsCorpusCollector:
             scope_df = gd_df[
                 ((gd_df['actor1countrycode'] == actor1countrycode) | (gd_df['actor2countrycode'] == actor2countrycode))]
 
-            scope_df['n_keywords'] = scope_df['sourceurl_path'].str.findall('|'.join(self.keywords)).apply(len)
+            if self.keywords:
 
-            scope_df = scope_df[scope_df['n_keywords'] > 0]
+                scope_df['n_keywords'] = scope_df['sourceurl_path'].str.findall('|'.join(self.keywords)).apply(len)
+
+                scope_df = scope_df[scope_df['n_keywords'] > 0]
+
+            if self.domains:
+
+                scope_df['n_domains'] = scope_df['source'].str.findall('|'.join(self.domains)).apply(len)
+
+                scope_df = scope_df[scope_df['n_domains'] > 0]
+
             scope_df = scope_df.drop_duplicates()
 
             scope_df['d_str'] = [d_str for _ in range(scope_df.shape[0])]
@@ -428,7 +441,6 @@ class NewsCorpusCollector:
             html_file.write(article_dict_str)
 
         return True
-
 
 if __name__ == "__main__":
     keyword_extractor = URLKeywordExtractor(

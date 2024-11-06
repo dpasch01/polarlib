@@ -124,7 +124,7 @@ class SyntacticalSentimentAttitudePipeline:
 
             if graph.has_edge(pair[0], pair[1]):
 
-                if graph.get_edge_data(pair[0], pair[1])['dep'] in ['ccomp', 'conj']:
+                if graph.get_edge_data(pair[0], pair[1])['dep'] in ['ccomp', 'compound', 'conj']:
 
                     for n in graph.nodes():
                         path_list += list(nx.all_simple_paths(graph, pair[0], target=n))
@@ -264,8 +264,7 @@ class SyntacticalSentimentAttitudePipeline:
         del noun_phrase_entry['noun_phrases']
 
         if not os.path.exists(output_folder): os.makedirs(output_folder, exist_ok=True)
-        with open(output_file, 'wb') as f:
-            pickle.dump(noun_phrase_entry, f)
+        with open(output_file, 'wb') as f: pickle.dump(noun_phrase_entry, f)
 
         return True
 
