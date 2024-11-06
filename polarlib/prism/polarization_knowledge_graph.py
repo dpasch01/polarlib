@@ -235,7 +235,7 @@ class PolarizationKnowledgeGraph:
 
             self.pkg.add_edge(d, t, type='Polarization', weight=p, observations=len(a['atts_fi']) + len(a['atts_fj']), predicate=s, label=s)
 
-    def get_node_by_type(self, type='Entity'): return [kv[0] for kv in dict(self.pkg.nodes(data=True)).items() if kv[1]['type'] == type]
+    def get_node_by_type(self, type='Entity'): return [kv[0] for kv in dict(self.pkg.nodes(data=True)).items() if 'type' in kv[1] and kv[1]['type'] == type]
 
     def get_positive_neighbors(self, node):
 

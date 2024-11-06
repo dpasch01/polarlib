@@ -21,6 +21,8 @@ class EntityLevelPolarizationAnalyzer:
         log_u = 0.0
         if len(union_n12) > 0: log_u = math.log(len(union_n12))
 
+        if in1 == in2 and in1 == 0: return 0
+
         return (
                 math.log(max(len(in1), len(in2))) - log_u
         ) / (
