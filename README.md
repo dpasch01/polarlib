@@ -1,4 +1,4 @@
-# Polarlib Library
+# Polarlib Package
 
 The `polarlib` is a Python library designed for modeling, extracting, analyzing, and integrating polarization knowledge into machine learning tasks. It consists of three main components:
 
