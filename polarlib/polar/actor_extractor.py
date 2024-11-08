@@ -1,6 +1,6 @@
 from multiprocessing import Pool
 
-import itertools, json, multiprocessing
+import itertools, json
 import nltk
 import os
 import requests
@@ -14,8 +14,110 @@ from spotlight import SpotlightException
 from tqdm import tqdm
 
 from collections import defaultdict
-
 from polarlib.utils.utils import *
+
+from fastcoref import LingMessCoref as OriginalLingMessCoref
+from fastcoref import FCoref as OriginalFCoref
+from transformers import AutoModel
+import functools
+
+class PatchedLingMessCoref(OriginalLingMessCoref):
+    def __init__(self, *args, **kwargs):
+        original_from_config = AutoModel.from_config
+
+        def patched_from_config(config, *args, **kwargs):
+            kwargs['attn_implementation'] = 'eager'
+            return original_from_config(config, *args, **kwargs)
+
+        try:
+            AutoModel.from_config = functools.partial(patched_from_config, attn_implementation='eager')
+            super().__init__(*args, **kwargs)
+        finally:
+            AutoModel.from_config = original_from_config
+
+class PatchedFCoref(OriginalFCoref):
+    def __init__(self, *args, **kwargs):
+        original_from_config = AutoModel.from_config
+
+        def patched_from_config(config, *args, **kwargs):
+            kwargs['attn_implementation'] = 'eager'
+            return original_from_config(config, *args, **kwargs)
+
+        try:
+            AutoModel.from_config = functools.partial(patched_from_config, attn_implementation='eager')
+            super().__init__(*args, **kwargs)
+        finally:
+            AutoModel.from_config = original_from_config      
+
+def align_clusters_to_char_level(clusters, char_map):
+    new_clusters = []
+    for cluster in clusters:
+        new_cluster = []
+        for start, end in cluster:
+            span_idx, span_char_level = char_map[(start, end)]
+            if span_char_level is None:
+                continue
+            new_cluster.append(span_char_level)
+        new_clusters.append(new_cluster)
+    return new_clusters
+
+def resolve_clusters(text, clusters):
+    """
+    Replaces all mentions in each cluster with the content of the first mention in that cluster.
+    
+    Parameters:
+        text (str): The original text.
+        clusters (list of list of tuples): A list where each cluster is a list of mention spans (start, end).
+        
+    Returns:
+        str: The text with mentions in each cluster replaced by the content of the first mention.
+    """
+    
+    replacements = []
+    for cluster in clusters:
+        
+        main_text = text[cluster[0][0]:cluster[0][1]]
+        
+        for mention in cluster[1:]:
+            start, end = mention
+            replacements.append((start, end, main_text))
+    
+    replacements.sort(key=lambda x: x[0], reverse=True)
+    
+    resolved_text = text
+    for start, end, replacement in replacements:
+        resolved_text = resolved_text[:start] + replacement + resolved_text[end:]
+    
+    return resolved_text
+
+def remove_duplicate_entities(data):
+    unique_entities = []
+    seen_entities = set()
+    
+    for entity in data['entities']:
+        identifier = (entity['begin'], entity['end'])
+        
+        if identifier not in seen_entities:
+            unique_entities.append(entity)
+            seen_entities.add(identifier)
+    
+    data['entities'] = unique_entities
+    
+    """
+    unique_entities = []
+    seen_entities = set()
+
+    for entity in data['entities']:
+        identifier = entity['title']
+        
+        if identifier not in seen_entities:
+            unique_entities.append(entity)
+            seen_entities.add(identifier)
+    
+    data['entities'] = unique_entities
+    """
+
+    return data
 
 class EntityExtractor:
     """
@@ -29,7 +131,7 @@ class EntityExtractor:
         article_paths (list): List of article file paths obtained from the 'pre_processed' folder.
     """
 
-    def __init__(self, output_dir, entity_set=None):
+    def __init__(self, output_dir, coref=False, entity_set=None):
         """
         Initialize the EntityExtractor.
 
@@ -45,7 +147,27 @@ class EntityExtractor:
             for o1, o2, o3 in os.walk(os.path.join(self.output_dir, 'pre_processed'))
         ]))
 
+        self.coref_model = PatchedLingMessCoref(
+            nlp    = "en_core_web_sm",
+            device = "cpu"
+        )
+
+        self.coref_flag = coref
+
         os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+
+    def coreference_resolution(self, text, verbose=False):
+
+        pred = self.coref_model.predict(texts=[text])[0]
+   
+        resolved_text = resolve_clusters(text, align_clusters_to_char_level(pred.clusters, pred.char_map))
+
+        if verbose:
+            print("Original Text: ", text)
+            print("Resolved Text: ", resolved_text)
+            print()
+
+        return resolved_text
 
     def _get_named_entities(self, text):
 
@@ -94,7 +216,7 @@ class EntityExtractor:
 
         return _entities
 
-    def _get_entity_mentionv2(self, text, dbpedia_entities):
+    def _get_entity_mentionv2(self, text, dbpedia_entities, sentence_start_offset=0):
 
         e_list = self._get_named_entities(text)
 
@@ -102,7 +224,9 @@ class EntityExtractor:
 
         for e1 in e_list:
 
-            e1_interval = set(range(e1['start'], e1['end']))
+            e1_start_global = e1['start'] + sentence_start_offset
+            e1_end_global = e1['end'] + sentence_start_offset
+            e1_interval = set(range(e1_start_global, e1_end_global))
 
             for e2 in dbpedia_entities:
 
@@ -147,6 +271,112 @@ class EntityExtractor:
             'dbpedia': e['URI']
         } for e in spot_entities]
 
+    def extract_entities_from_text(self, text, confidence=0.40, coref=False):
+        """
+        Extract entities from a single article.
+
+        Args:
+            path (str): The path to the article file.
+
+        Returns:
+            bool or None: Returns True if extraction is successful, None if an exception occurs.
+        """
+
+        try:
+
+            sentence_list = text.split('\n')
+            sentence_list = [sent_tokenize(s) for s in sentence_list]
+            sentence_list = list(itertools.chain.from_iterable(sentence_list))
+
+            entity_list   = self.query_dbpedia_entities(text, confidence=confidence)
+
+            max_from_i, sentence_object_list = 0, []
+
+            for s in sentence_list:
+
+                from_i, to_i = text[max_from_i:].index(s), len(s)
+
+                from_i     += max_from_i
+                to_i       += from_i
+                max_from_i  = to_i
+
+                sentence_object = {
+                    "sentence": s,
+                    "from":     from_i,
+                    "to":       to_i,
+                    "entities": []
+                }
+
+                s_range_set = set(list(range(from_i, to_i)))
+
+                s_entity_list = self._get_entity_mentionv2(s, entity_list, from_i)
+
+                for e in s_entity_list:
+
+                    if e == None or (self.entity_set and e['title'] not in self.entity_set): continue
+
+                    e_range_set = set(list(range(e['begin'], e['end'])))
+
+                    if len(s_range_set.intersection(e_range_set)) > 0: sentence_object['entities'].append(e)
+
+                sentence_object_list.append(sentence_object.copy())
+
+        except Exception as ex:
+            print(ex)
+            return None
+        
+        if coref:
+                
+            pred = self.coref_model.predict(texts=[text])[0]
+
+            coreference_char_clusters = align_clusters_to_char_level(pred.clusters, pred.char_map)
+
+            char_sentence_indices = {}
+
+            for i, s in enumerate(sentence_object_list):
+
+                for c in range(s['from'], s['to']):
+
+                    char_sentence_indices[c] = i
+                    
+            new_entities = [[] for s in sentence_object_list]
+
+            for i, sentence in enumerate(sentence_object_list):
+
+                for e in sentence['entities']:
+
+                    entity_range = set(list((e['begin'], e['end'])))
+
+                    for c in coreference_char_clusters:
+                    
+                        origin_c     = c[0]
+                        origin_range = set(list(range(origin_c[0], origin_c[1])))
+                    
+                        if len(origin_range.intersection(entity_range)) > 0: 
+
+                            for k in c[1:]:
+                                
+                                new_entities[char_sentence_indices[k[0]]].append({
+                                    "begin": k[0],
+                                    "end":   k[1],
+                                    "title": e['title'],
+                                    "score": e['score'],
+                                    "rank":  e['rank'],
+                                    "text":  text[k[0]:k[1]],
+                                    "types": e['types'],
+                                    "wikid": e['wikid'],
+                                    "dbpedia": e['dbpedia']
+                                })
+
+            for i, es in enumerate(new_entities):
+
+                sentence_object_list[i]['entities'] += es
+
+            """The code below is to remove duplicate mentions, both at the indices level and at the title level."""
+            sentence_object_list = [remove_duplicate_entities(d) for d in sentence_object_list]
+
+        return sentence_object_list
+
     def extract_article_entities(self, path):
         """
         Extract entities from a single article.
@@ -160,23 +390,25 @@ class EntityExtractor:
         try:
 
             article = load_article(path)
+            text    = article['text']
 
             output_folder = os.path.join(self.output_dir, 'entities/' + path.split('/')[-2])
             output_file   = os.path.join(output_folder, article['uid'] + '.json')
 
             if os.path.exists(output_file): return True
 
-            sentence_list = article['text'].split('\n')
+            """
+            sentence_list = text.split('\n')
             sentence_list = [sent_tokenize(s) for s in sentence_list]
             sentence_list = list(itertools.chain.from_iterable(sentence_list))
 
-            entity_list   = self.query_dbpedia_entities(article['text'])
+            entity_list   = self.query_dbpedia_entities(text)
 
             max_from_i, sentence_object_list = 0, []
 
             for s in sentence_list:
 
-                from_i, to_i = article['text'][max_from_i:].index(s), len(s)
+                from_i, to_i = text[max_from_i:].index(s), len(s)
 
                 from_i     += max_from_i
                 to_i       += from_i
@@ -202,6 +434,9 @@ class EntityExtractor:
                     if len(s_range_set.intersection(e_range_set)) > 0: sentence_object['entities'].append(e)
 
                 sentence_object_list.append(sentence_object.copy())
+            """
+
+            sentence_object_list = self.extract_entities_from_text(text, coref=self.coref_flag)
 
             article_dict_str = json.dumps({
                 'uid': article['uid'],
@@ -223,16 +458,25 @@ class EntityExtractor:
 
         This method uses multiprocessing to extract entities from multiple articles concurrently.
         """
-        pool = Pool(n_processes)
 
-        for i in tqdm(
-                pool.map(self.extract_article_entities, self.article_paths),
-                desc  = 'Identifying Article Entities',
-                total = len(self.article_paths)
-        ): pass
+        if n_processes == 1:
 
-        pool.close()
-        pool.join()
+            for p in tqdm(self.article_paths, desc  = 'Identifying Article Entities'):
+
+                self.extract_article_entities(p)
+
+        else:
+
+            pool = Pool(n_processes)
+
+            for i in tqdm(
+                    pool.map(self.extract_article_entities, self.article_paths),
+                    desc  = 'Identifying Article Entities',
+                    total = len(self.article_paths)
+            ): pass
+
+            pool.close()
+            pool.join()
 
 class NounPhraseExtractor:
     """

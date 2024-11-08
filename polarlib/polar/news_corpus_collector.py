@@ -61,7 +61,7 @@ class URLKeywordExtractor:
 
 class NewsCorpusCollector:
 
-    def __init__(self, output_dir, from_date, to_date, keywords, domains):
+    def __init__(self, output_dir, from_date, to_date, keywords, domains=None):
         """
         Initialize the NewsCorpusGenerator.
 

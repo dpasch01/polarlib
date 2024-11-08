@@ -13,10 +13,11 @@ import numpy as np
 from nltk.corpus import stopwords
 from textblob import TextBlob
 from sentence_transformers import SentenceTransformer
+from wordllama import WordLlama
 
 class TopicIdentifier:
 
-    def __init__(self, output_dir):
+    def __init__(self, output_dir, llama_wv=False):
         """
         Initialize the TopicIdentifier object.
 
@@ -32,7 +33,15 @@ class TopicIdentifier:
         self.encoded_noun_phrase_list = None
         self.noun_phrase_embedding_dict = {}
 
-        self.model = SentenceTransformer('all-mpnet-base-v2')
+        self.llama_wv = llama_wv
+
+        if not self.llama_wv:
+            
+            self.model = SentenceTransformer('all-mpnet-base-v2')
+
+        else:
+        
+            self.model = WordLlama.load()
 
         for root, folders, files in os.walk(os.path.join(self.output_dir, 'noun_phrases')):
 
@@ -110,12 +119,18 @@ class TopicIdentifier:
             ]) for np in tqdm(self.noun_phrase_list)
         ]
 
-        self.encoded_noun_phrase_list = self.model.encode(
-            self.clean_noun_phrase_list,
-            device='cuda',
-            show_progress_bar=True,
-            batch_size=128
-        )
+        if self.llama_wv:
+
+            self.encoded_noun_phrase_list = self.model.embed(self.noun_phrase_list)
+
+        else:
+            
+            self.encoded_noun_phrase_list = self.model.encode(
+                self.clean_noun_phrase_list,
+                device='cuda',
+                show_progress_bar=True,
+                batch_size=128
+            )
 
         for i, np in enumerate(self.noun_phrase_list):  self.noun_phrase_embedding_dict[np] = \
         self.encoded_noun_phrase_list[i]
