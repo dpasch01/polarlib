@@ -93,7 +93,7 @@ class SAGGenerator:
 
         self.pair_sentiment_attitude_dict = dict(pair_sentiment_attitude_dict)
 
-    def calculate_attitude_buckets(self, verbose=False, func=numpy.mean, filter_values=[]):
+    def calculate_attitude_buckets(self, verbose=False, func=numpy.mean, filter_values=[], figsize=(16, 4)):
         """
         Calculate attitude buckets based on sentiment attitudes.
 
@@ -113,6 +113,8 @@ class SAGGenerator:
         filtered_lists = [list(filter(lambda a: a not in filter_values, v)) for v in self.pair_sentiment_attitude_dict.values()]
         non_empty_filtered_lists = [func(v) for v in filtered_lists if len(v) > 0]
 
+        plt.figure(figsize=figsize)
+        
         (n, bins, patches) = plt.hist(non_empty_filtered_lists, rwidth=0.95)
 
         self.bins = bins

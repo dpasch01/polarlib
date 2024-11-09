@@ -14,7 +14,17 @@ def convert_sentiment_attitude(sentiment_value, sentiment_mapping):
 
     return sentiment_category
 
-def load_article(path, func=lambda t: json.loads(json.load(t))):
+def load_json(f): 
+    
+    article_obj = json.load(f)
+
+    if isinstance(article_obj, str):
+    
+        article_obj = json.loads(article_obj)
+
+    return article_obj
+
+def load_article(path, func=load_json):
     """
     Load an article from a JSON file.
 

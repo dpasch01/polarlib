@@ -1,4 +1,4 @@
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager
 
 import itertools, json
 import nltk
@@ -119,6 +119,13 @@ def remove_duplicate_entities(data):
 
     return data
 
+def extract_article_with_progress(args):
+    """Helper function to update progress for each process."""
+    extractor, path, progress_queue = args
+    result = extractor.extract_article_entities(path)
+    progress_queue.put(1)  # Report progress
+    return result
+
 class EntityExtractor:
     """
     A class for extracting entities from articles and querying DBpedia for entity information.
@@ -147,10 +154,12 @@ class EntityExtractor:
             for o1, o2, o3 in os.walk(os.path.join(self.output_dir, 'pre_processed'))
         ]))
 
-        self.coref_model = PatchedLingMessCoref(
-            nlp    = "en_core_web_sm",
-            device = "cpu"
-        )
+        if coref:
+            
+            self.coref_model = PatchedLingMessCoref(
+                nlp    = "en_core_web_sm",
+                device = "cpu"
+            )
 
         self.coref_flag = coref
 
@@ -397,45 +406,6 @@ class EntityExtractor:
 
             if os.path.exists(output_file): return True
 
-            """
-            sentence_list = text.split('\n')
-            sentence_list = [sent_tokenize(s) for s in sentence_list]
-            sentence_list = list(itertools.chain.from_iterable(sentence_list))
-
-            entity_list   = self.query_dbpedia_entities(text)
-
-            max_from_i, sentence_object_list = 0, []
-
-            for s in sentence_list:
-
-                from_i, to_i = text[max_from_i:].index(s), len(s)
-
-                from_i     += max_from_i
-                to_i       += from_i
-                max_from_i  = to_i
-
-                sentence_object = {
-                    "sentence": s,
-                    "from":     from_i,
-                    "to":       to_i,
-                    "entities": []
-                }
-
-                s_range_set = set(list(range(from_i, to_i)))
-
-                s_entity_list = self._get_entity_mentionv2(s, entity_list)
-
-                for e in s_entity_list:
-
-                    if e == None or (self.entity_set and e['title'] not in self.entity_set): continue
-
-                    e_range_set = set(list(range(e['begin'], e['end'])))
-
-                    if len(s_range_set.intersection(e_range_set)) > 0: sentence_object['entities'].append(e)
-
-                sentence_object_list.append(sentence_object.copy())
-            """
-
             sentence_object_list = self.extract_entities_from_text(text, coref=self.coref_flag)
 
             article_dict_str = json.dumps({
@@ -467,16 +437,83 @@ class EntityExtractor:
 
         else:
 
-            pool = Pool(n_processes)
+            with Manager() as manager:
 
-            for i in tqdm(
-                    pool.map(self.extract_article_entities, self.article_paths),
-                    desc  = 'Identifying Article Entities',
-                    total = len(self.article_paths)
-            ): pass
+                progress_queue = manager.Queue()
 
-            pool.close()
-            pool.join()
+                with tqdm(total=len(self.article_paths), desc='Identifying Article Entities') as pbar:
+                    
+                    with Pool(n_processes) as pool:
+                        
+                        for _ in pool.imap_unordered(
+                                extract_article_with_progress,
+                                [(self, p, progress_queue) for p in self.article_paths]
+                        ):
+                            
+                            pbar.update(progress_queue.get())
+
+    def apply_transformations(self, operations):
+        """
+        Apply a series of replace and delete operations on entity files.
+
+        Args:
+            operations (list of tuples): Each tuple contains an operation type ("replace" or "delete") and the data:
+                - For "replace", the data is a dictionary mapping old entity URIs to new URIs.
+                - For "delete", the data is a list of entity URIs to remove.
+        """
+        # Iterate through all entity files in the 'entities' directory
+        entities_dir = os.path.join(self.output_dir, 'entities')
+
+        entity_files = []
+
+        for root, dirs, files in os.walk(entities_dir):
+            for file in files:
+                if file.endswith('.json'):
+                    file_path = os.path.join(root, file)
+                    entity_files.append(file_path)
+        
+        for file_path in tqdm(entity_files):
+            
+            # Load the existing entity data
+            with open(file_path, 'r') as f:
+
+                data = json.load(f)
+
+                if isinstance(data, str):
+                
+                    data = json.loads(data)
+            
+                modified = False  # Track if modifications are made to save the file later
+                
+                # Iterate over each transformation operation
+                for op_type, op_data in operations:
+                    if op_type == "replace":
+                        # Replace old URIs with new URIs in the entity data
+
+                        for sentence in data['entities']:
+                            for entity in sentence['entities']:
+
+                                if entity['title'] in op_data:
+
+                                    entity['dbpedia'] = op_data[entity['title']]
+                                    entity['title'] = op_data[entity['title']]
+
+                                    modified = True
+                    elif op_type == "delete":
+                        # Delete specified URIs from the entity data
+                        for sentence in data['entities']:
+                            initial_len = len(sentence['entities'])
+                            sentence['entities'] = [
+                                entity for entity in sentence['entities']
+                                if entity['dbpedia'] not in op_data
+                            ]
+                            if len(sentence['entities']) < initial_len:
+                                modified = True
+                
+                # Save changes to the file if modified
+                if modified:
+                    with open(file_path, 'w') as f:
+                        json.dump(data, f, indent=2)            
 
 class NounPhraseExtractor:
     """
@@ -503,6 +540,69 @@ class NounPhraseExtractor:
         for root, folders, files in os.walk(os.path.join(self.output_dir, 'entities')):
 
             for p in files: self.entity_paths.append(os.path.join(root, p))
+
+    def apply_transformations(self, operations):
+        """
+        Apply a series of replace and delete operations on entity files.
+
+        Args:
+            operations (list of tuples): Each tuple contains an operation type ("replace" or "delete") and the data:
+                - For "replace", the data is a dictionary mapping old entity URIs to new URIs.
+                - For "delete", the data is a list of entity URIs to remove.
+        """
+        # Iterate through all entity files in the 'entities' directory
+        entities_dir = os.path.join(self.output_dir, 'noun_phrases')
+
+        entity_files = []
+
+        for root, dirs, files in os.walk(entities_dir):
+            for file in files:
+                if file.endswith('.json'):
+                    file_path = os.path.join(root, file)
+                    entity_files.append(file_path)
+        
+        for file_path in tqdm(entity_files):
+            
+            # Load the existing entity data
+            with open(file_path, 'r') as f:
+
+                data = json.load(f)
+
+                if isinstance(data, str):
+                
+                    data = json.loads(data)
+            
+                modified = False  # Track if modifications are made to save the file later
+                
+                # Iterate over each transformation operation
+                for op_type, op_data in operations:
+                    if op_type == "replace":
+                        # Replace old URIs with new URIs in the entity data
+
+                        for sentence in data['noun_phrases']:
+                            for entity in sentence['entities']:
+
+                                if entity['title'] in op_data:
+
+                                    entity['dbpedia'] = op_data[entity['title']]
+                                    entity['title'] = op_data[entity['title']]
+
+                                    modified = True
+                    elif op_type == "delete":
+                        # Delete specified URIs from the entity data
+                        for sentence in data['noun_phrases']:
+                            initial_len = len(sentence['entities'])
+                            sentence['entities'] = [
+                                entity for entity in sentence['entities']
+                                if entity['dbpedia'] not in op_data
+                            ]
+                            if len(sentence['entities']) < initial_len:
+                                modified = True
+                
+                # Save changes to the file if modified
+                if modified:
+                    with open(file_path, 'w') as f:
+                        json.dump(data, f, indent=2)    
 
     def _clean_text(self, text):
         """

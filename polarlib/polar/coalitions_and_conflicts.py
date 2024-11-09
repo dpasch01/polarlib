@@ -468,6 +468,8 @@ class DipoleGenerator:
         self.dipoles = self._generate_dipoles(f_g_thr=f_g_thr, n_r_thr=f_g_thr)
         with open(os.path.join(self.output_dir, 'polarization/' + 'dipoles.pckl'), 'wb') as f: pickle.dump(self.dipoles, f)
 
+        return self.dipoles
+
     def _generate_dipoles(self, f_g_thr=0.7, n_r_thr=0.5):
         """
         Generate dipoles based on thresholds.

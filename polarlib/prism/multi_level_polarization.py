@@ -1,12 +1,108 @@
 import math, itertools, networkx as nx, pandas as pd, os, numpy
-
+import subprocess
 from tqdm import tqdm
 from collections import Counter
 from polarlib.prism.cohesiveness import cohesiveness
 from polarlib.prism.polarization_knowledge_graph import PolarizationKnowledgeGraph
 
-class EntityLevelPolarizationAnalyzer:
+class POLEExecutor:
 
+    def __init__(self, pole_path='./'):
+        
+        self.pole_path = "./"
+
+    def calculate_pole_graph(self, pkg:PolarizationKnowledgeGraph):
+
+        G = pkg.sag
+
+        with open('/tmp/ssbm.edges.tmp', 'w') as f:
+            
+            for e in sorted(list(G.edges(data=True)), key = lambda e: (e[0], e[1])):
+        
+                f.write(f"{e[0]} {e[1]} {e[2]['weight']}\n")
+        
+        result = subprocess.run(
+            ['python', os.path.join(self.pole_path, 'POLE/src/polarization.py'), '--node-level', 'False', '--graph', '/tmp/ssbm.edges.tmp', '--markov-time', '0.0'],
+            stdout = subprocess.PIPE,  # Capture standard output
+            stderr = subprocess.PIPE,  # Capture standard error (if needed)
+            text   = True              # Return output as string rather than bytes
+        )
+        
+        output       = result.stdout  # Standard output
+        error_output = result.stderr  # Standard error (if there is any)
+
+        if result.returncode != 0: raise(Exception(error_output))
+        
+        return float(output.split('polarization: ')[-1].strip())
+        
+    def calculate_pole_graph_without_node(self, pkg:PolarizationKnowledgeGraph, node):
+        
+        G = pkg.sag
+
+        _G = G.copy()
+
+        print('Default:', _G.number_of_nodes())
+
+        if node != None and isinstance(node, list):
+
+            for n in node: _G.remove_node(n)
+
+        elif node != None: _G.remove_node(node)
+
+        _ = nx.Graph()
+
+        node_to_int = {}
+        
+        i = 0
+        
+        for n in sorted(_G.nodes()):
+        
+            node_to_int[n] = i
+        
+            i += 1
+        
+        for e in _G.edges(data=True):
+        
+            _.add_edge(node_to_int[e[0]], node_to_int[e[1]], weight=e[2]['weight'])
+
+        print('Updated:', _.number_of_nodes())
+
+        return calculate_pole_graph(_)
+
+    def calculate_pole_nodes(self, pkg:PolarizationKnowledgeGraph):
+        
+        G           = pkg.sag
+        int_to_node = pkg.int_to_node
+
+        with open('/tmp/ssbm.edges.tmp', 'w') as f:
+    
+            for e in sorted(list(G.edges(data=True)), key = lambda e: (e[0], e[1])):
+
+                f.write(f"{e[0]} {e[1]} {e[2]['weight']}\n")
+
+        result = subprocess.run(
+            ['python', os.path.join(self.pole_path, 'POLE/src/polarization.py'), '--graph', '/tmp/ssbm.edges.tmp', '--node-polarization', '/tmp/ssbm.polarization'],
+            stdout = subprocess.PIPE,  # Capture standard output
+            stderr = subprocess.PIPE,  # Capture standard error (if needed)
+            text   = True              # Return output as string rather than bytes
+        )
+        
+        output       = result.stdout  # Standard output
+        error_output = result.stderr  # Standard error (if there is any)
+
+        if result.returncode != 0: raise(Exception(error_output))
+        
+        with open("/tmp/ssbm.polarization", 'r') as f:
+
+            n = list(range(G.number_of_nodes()))
+            l = f.readlines()
+
+        node_to_pole = {int_to_node[i]:float(v.strip()) for i,v in zip(n, l)}
+
+        return node_to_pole
+                
+class EntityLevelPolarizationAnalyzer:
+      
     @staticmethod
     def google_semantic_distance(e1, e2, G):
 
@@ -68,7 +164,53 @@ class EntityLevelPolarizationAnalyzer:
         )
 
     @staticmethod
-    def calculate_centrality(pkg: PolarizationKnowledgeGraph, func=nx.betweenness_centrality): return dict(func(pkg.pkg.subgraph(pkg.get_entities())))
+    def calculate_centrality(pkg: PolarizationKnowledgeGraph, func=nx.betweenness_centrality): 
+        
+        return dict(func(pkg.pkg.subgraph(pkg.get_entities())))
+
+    @staticmethod
+    def calculate_polarization_index(pkg: PolarizationKnowledgeGraph):
+        
+        G = pkg.pkg.subgraph(pkg.get_entities())
+
+        pi_g = {}
+
+        for node in G.nodes:
+
+            A_plus = 0
+            A_minus = 0
+            
+            for neighbor in G.neighbors(node):
+                
+                edge_weight = G[node][neighbor]['weight']
+                
+                if edge_weight > 0:   A_plus += 1
+                elif edge_weight < 0: A_minus += 1
+
+            A_plus  = [1 for i in range(A_plus)]
+            A_minus = [-1 for i in range(A_minus)]
+            
+            if (len(A_minus) + len(A_plus)) == 0.0: return 0.0
+
+            D_A = abs(
+                (len(A_plus) / (len(A_plus) + len(A_minus))) - \
+                (len(A_minus) / (len(A_plus) + len(A_minus)))
+            )
+
+            gc_minus = numpy.mean(A_minus) if len(A_minus) > 0 else 0.0
+            gc_plus  = numpy.mean(A_plus) if len(A_plus) > 0 else 0.0
+
+            gc_d = (abs(gc_plus - gc_minus)) / 2
+
+            m = (1.0 - D_A) * gc_d
+
+            pi_g[node] = {
+                'm': m,
+                'positive': len(A_plus),
+                'negative': len(A_minus)
+            }
+
+        return pi_g
 
     @staticmethod
     def calculate_signed_semantic_association(pkg: PolarizationKnowledgeGraph):
@@ -120,7 +262,11 @@ class EntityLevelPolarizationAnalyzer:
         return signed_semantic_association_dict
 
     @staticmethod
-    def analyze(pkg: PolarizationKnowledgeGraph, verbose=False):
+    def analyze(pkg: PolarizationKnowledgeGraph, pole_path='./', output_dir='./', verbose=False):
+
+        pole_executor = POLEExecutor(pole_path)
+
+        pole_dict = pole_executor.calculate_pole_nodes(pkg)
 
         semantic_association_dict        = EntityLevelPolarizationAnalyzer.calculate_semantic_association(pkg)
 
@@ -131,32 +277,54 @@ class EntityLevelPolarizationAnalyzer:
         if verbose: print('Calculated signed semantic association.')
 
         degree     = EntityLevelPolarizationAnalyzer.calculate_centrality(pkg, nx.degree_centrality)
+        
         if verbose: print('Calculated degree centrality.')
 
         closeness  = EntityLevelPolarizationAnalyzer.calculate_centrality(pkg, nx.closeness_centrality)
+        
         if verbose: print('Calculated closeness centrality.')
+
+        weighted_degree = EntityLevelPolarizationAnalyzer.calculate_centrality(pkg, lambda g: g.degree(weight='weight'))
 
         # betweeness = EntityLevelPolarizationAnalyzer.calculate_centrality(pkg)
         # if verbose: print('Calculated betweeness centrality.')
 
         if verbose: print('Calculated centrality measures.')
 
+        pi_g = EntityLevelPolarizationAnalyzer.calculate_polarization_index(pkg)
+
         df = []
 
         for e in tqdm(pkg.get_entities(), desc='Populating Entity Metrics'):
 
             df.append({
-                'entity':                e,
-                'association':           semantic_association_dict[e] if e in semantic_association_dict else None,
-                'signed_association':    signed_semantic_association_dict[e] if e in signed_semantic_association_dict else None,
-                'degree_centrality':     degree[e],
-                'closeness_centrality':  closeness[e],
-
+                'entity':                 e,
+                'sa':            semantic_association_dict[e] if e in semantic_association_dict else None,
+                'ssa':     signed_semantic_association_dict[e] if e in signed_semantic_association_dict else None,
+                # 'degree_centrality':     degree[e],
+                # 'closeness_centrality':  closeness[e],
+                # 'weighted_degree':       weighted_degree[e],
                 # 'betweeness_centrality': betweeness[e]
+                'mu':     pi_g[e]['m'],
+                'pos.':               pi_g[e]['positive'],
+                'neg.':               pi_g[e]['negative'],
+                'pole':                   pole_dict[e]
             })
 
-        return pd.DataFrame.from_dict(df)
+        df = pd.DataFrame.from_dict(df)
 
+        def calculate_score(ssa, pi):
+
+            return ssa / (1 - pi + 0.000000001)
+
+        df['score'] = df.apply(lambda row: calculate_score(row['ssa'], row['mu']), axis=1)
+
+        os.makedirs(os.path.join(output_dir, 'prism/'), exist_ok=True)
+
+        df.to_csv(os.path.join(output_dir, 'prism/entity-level.csv'))
+
+        return df
+    
 class GroupLevelPolarizationAnalyzer:
 
     @staticmethod
