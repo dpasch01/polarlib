@@ -17,6 +17,77 @@ from wordllama import WordLlama
 
 class TopicIdentifier:
 
+    @staticmethod
+    def extract_seed_phrases(docs, top_n=10, keyphrase_ngram_range=(1, 3)):
+
+        from keybert import KeyBERT
+
+        kw_model = KeyBERT()
+
+        seed_phrases = []
+
+        for article in tqdm(docs):
+            
+            keywords = kw_model.extract_keywords(article, keyphrase_ngram_range=keyphrase_ngram_range, stop_words='english', top_n=top_n)
+            
+            seed_phrases.extend([kw[0] for kw in keywords])
+
+        return seed_phrases
+    
+    @staticmethod
+    def contextual_relevance_filtering(output_dir, contextual_relevance_scores, thr=0.0):
+
+        import json
+
+        relevant_topics = [kv[0] for kv in contextual_relevance_scores.items() if kv[1] > thr]
+
+        with gzip.open(os.path.join(output_dir, 'topics.json.gz'), 'r') as f: polar_topics = json.load(f)
+
+        polar_topics = {k:v for k,v in polar_topics.items() if k in relevant_topics}
+
+        with gzip.open(os.path.join(output_dir, 'topics.json.gz'), 'wt') as f:
+
+            json.dump(polar_topics, f)
+    
+    @staticmethod
+    def calculate_contextual_relevance_scores(output_dir, seed_phrases=[]):
+
+        wl = WordLlama.load()
+
+        import torch, numpy, gzip, json
+        from sentence_transformers import util
+
+        seed_embeddings = wl.embed(seed_phrases)
+
+        def compute_centroid(sentences):
+            
+            embeddings = wl.embed(list(set(sentences)))
+            
+            centroid = numpy.mean(embeddings, axis=0)
+            
+            return centroid
+
+        def calculate_contextual_relevance(cluster_centroids, seed_embeddings, verbose=False):
+            
+            contextual_relevance_scores = []
+
+            for centroid_embedding in tqdm(cluster_centroids):
+                
+                cosine_similarities       = util.pytorch_cos_sim(torch.tensor(centroid_embedding), torch.tensor(seed_embeddings))
+                avg_similarity            = cosine_similarities.mean().item()
+                
+                contextual_relevance_scores.append(avg_similarity)
+
+            return contextual_relevance_scores
+        
+        with gzip.open(os.path.join(output_dir, 'topics.json.gz'), 'r') as f: polar_topics = json.load(f)
+
+        topic_id_list       = sorted(polar_topics)
+        topic_centroid_list = [compute_centroid(polar_topics[topic_id]['noun_phrases']) for topic_id in tqdm(topic_id_list)]
+        contextual_relevance_scores = calculate_contextual_relevance(topic_centroid_list, seed_embeddings)
+
+        return {topic_id: relevance_w for topic_id, relevance_w in sorted(list(zip(topic_id_list, contextual_relevance_scores)), key = lambda k: k[1], reverse=True)}
+
     def __init__(self, output_dir, llama_wv=False):
         """
         Initialize the TopicIdentifier object.
@@ -473,6 +544,9 @@ class TopicIdentifier:
 
         with gzip.open(os.path.join(self.output_dir, 'topics.json.gz'), 'wt') as f:
             json.dump(topical_clusters, f)
+
+    
+        
 
 
 if __name__ == "__main__":
