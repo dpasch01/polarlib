@@ -103,34 +103,36 @@ from polarlib.polar.sag_generator import *
 
 # Example Workflow
 OUTPUT_DIR = "/tmp/example"
-keywords = ["openai", "gpt"]
+keywords = ["openai", "altman", 'chatgpt', 'gpt']
 
 # Collect news corpus
 corpus_collector = NewsCorpusCollector(
-	output_dir	= OUTPUT_DIR,
-	from_date	= date(year = 2020, month = 1, day = 21),
-	to_date  	= date(year = 2021, month = 12, day = 31),
-	keywords 	= filtered_keywords
+    output_dir = OUTPUT_DIR,
+    from_date = date(year=2023, month=11, day=16),
+    to_date = date(year=2023, month=11, day=23),
+    keywords = keywords
 )
 
 corpus_collector.collect_archives()
+corpus_collector.collect_articles(n_articles = 250)
 corpus_collector.pre_process_articles()
 
 # Extract entities and noun phrases
-entity_extractor = EntityExtractor(output_dir=OUTPUT_DIR)
+entity_extractor = EntityExtractor(output_dir=OUTPUT_DIR, coref=False)
 entity_extractor.extract_entities()
 
 noun_phrase_extractor = NounPhraseExtractor(output_dir=OUTPUT_DIR)
 noun_phrase_extractor.extract_noun_phrases()
 
 # Extract the discussion topics
-topic_identifier = TopicIdentifier(output_dir=OUTPUT_DIR)
+topic_identifier = TopicIdentifier(output_dir=OUTPUT_DIR, llama_wv=False)
 topic_identifier.encode_noun_phrases()
-topic_identifier.noun_phrase_clustering()
+topic_identifier.noun_phrase_clustering(threshold=0.8)
 
 # Calculate the attitudes between entities and topics
 sentiment_attitude_pipeline = SyntacticalSentimentAttitudePipeline(
 	output_dir  = OUTPUT_DIR,
+        nlp = spacy.load("en_core_web_sm"),
 	dictionary_path = "mpqa.csv"
 )
 
@@ -138,18 +140,47 @@ sentiment_attitude_pipeline.calculate_sentiment_attitudes()
 
 # Construct the Sentiment Attitude Graph (SAG)
 sag_generator = SAGGenerator(OUTPUT_DIR)
+
+sag_generator.load_sentiment_attitudes()
+
+bins = sag_generator.calculate_attitude_buckets(verbose=True, figsize=(16, 4))
+
+sag_generator.convert_attitude_signs(
+    bin_category_mapping = {
+        "NEGATIVE": [(-1.00, -0.02)],
+        "NEUTRAL": [(-0.02, 0.02)],
+        "POSITIVE": [(0.02, 1.00)]
+    },
+    minimum_frequency = 5,
+    verbose = True
+)
+
 G, node_to_int, int_to_node = sag_generator.construct_sag()
 
 # Extract the fellowships and dipoles
 fellowship_extractor = FellowshipExtractor(OUTPUT_DIR)
-fellowships = fellowship_extractor.extract_fellowships()
+
+fellowships = fellowship_extractor.extract_fellowships(
+    n_iter = 10,
+    resolution = 0.075,
+    merge_iter = 10,
+    jar_path ='./polarlib',
+    verbose = True,
+    output_flag = True
+)
 
 dipole_generator = DipoleGenerator(OUTPUT_DIR)
-dipoles = dipole_generator.generate_dipoles()
+dipoles = dipole_generator.generate_dipoles(f_g_thr=0.7, n_r_thr=0.5)
 
 # Calculate topic polarization
 topic_attitude_calculator = TopicAttitudeCalculator(OUTPUT_DIR)
-polarization_indices = topic_attitude_calculator.polarization_index()
+
+topic_attitude_calculator.load_sentiment_attitudes()
+
+dipole_topics_dict = topic_attitude_calculator.get_polarization_topics()
+
+topic_attitudes = topic_attitude_calculator.get_topic_attitudes()
+
 ```
 
 ### PRISM Quickstart
@@ -164,6 +195,8 @@ PRISM provides tools to analyze polarization across entity, group, and topic lev
 2. **Group-Level Analysis:** Assesses ideological and attitudinal cohesiveness within fellowships. Uses spectrum values (e.g., Left-Right) to evaluate group alignment.
 3. **Topic-Level Analysis:** Ranks topics by their polarization scores, assessing how different entities’ attitudes contribute to topic divisiveness.
 
+**UPDATE:** `EntityLevelPolarizationAnalyzer` requires also `POLE` to construct node-level polarization scores. Before proceeding, execute the following: `git clone https://github.com/zexihuang/POLE`.
+
 ```python
 from polarlib.prism.polarization_knowledge_graph import PolarizationKnowledgeGraph
 
@@ -174,7 +207,7 @@ pkg.construct()
 from polarlib.prism.multi_level_polarization import EntityLevelPolarizationAnalyzer
 
 entity_level_analyzer = EntityLevelPolarizationAnalyzer()
-entity_df = entity_level_analyzer.analyze(pkg)
+entity_df = entity_level_analyzer.analyze(pkg, pole_path='./', output_dir=OUTPUT_DIR)
 print(entity_df.head(5))
 
 # Group-Level Analysis
