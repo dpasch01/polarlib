@@ -138,7 +138,7 @@ class EntityExtractor:
         article_paths (list): List of article file paths obtained from the 'pre_processed' folder.
     """
 
-    def __init__(self, output_dir, coref=False, entity_set=None):
+    def __init__(self, output_dir, coref=False, entity_set=None, spotlight_url= 'http://127.0.0.1:2222/rest/annotate'):
         """
         Initialize the EntityExtractor.
 
@@ -148,6 +148,8 @@ class EntityExtractor:
         self.output_dir = output_dir
         self.entity_set = entity_set
         self.spacy_nlp  = spacy.load("en_core_web_sm")
+
+        self.spotlight_url = spotlight_url
 
         self.article_paths   = list(itertools.chain.from_iterable([
             [os.path.join(o1, p) for p in o3]
@@ -209,7 +211,7 @@ class EntityExtractor:
 
         if len(t) == 0: return None
 
-        dbpedia_entities = self.query_dbpedia_entities(t, confidence=0.45)
+        dbpedia_entities = self.query_dbpedia_entities(t, confidence=0.45, spotlight_url=self.spotlight_url)
 
         _entities = []
 
@@ -297,7 +299,7 @@ class EntityExtractor:
             sentence_list = [sent_tokenize(s) for s in sentence_list]
             sentence_list = list(itertools.chain.from_iterable(sentence_list))
 
-            entity_list   = self.query_dbpedia_entities(text, confidence=confidence)
+            entity_list   = self.query_dbpedia_entities(text, confidence=confidence, spotlight_url=self.spotlight_url)
 
             max_from_i, sentence_object_list = 0, []
 
