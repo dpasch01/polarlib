@@ -247,13 +247,18 @@ PARALLAX enables the use of polarization knowledge in supervised machine learnin
 
 ## Citations
 
-```bibtex 
-@inproceedings{
-  paschalides2021polar,
-  author = {Paschalides, Demetris and Pallis, George and Dikaiakos, Marios D.},
-  title = {POLAR: A Holistic Framework for the Modelling of Polarization and Identification of Polarizing Topics in News Media},
-  booktitle = {Proceedings of the 2021 IEEE/ACM International Conference on Advances in Social Networks Analysis and Mining},
-  series = {ASONAM '21}
+```bibtex
+@article{
+  10.1145/3703594,
+  author = {Paschalides, Demetris and Pallis, George and Dikaiakos, Marios},
+  title = {A Framework for the Unsupervised Modeling and Extraction of Polarization Knowledge from News Media},
+  year = {2024},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3703594},
+  doi = {10.1145/3703594},
+  journal = {Trans. Soc. Comput.},
+  month = dec
 }
 ```
 
@@ -267,3 +272,15 @@ PARALLAX enables the use of polarization knowledge in supervised machine learnin
   series = {ASONAM '24}
 }
 ```
+
+```bibtex 
+@inproceedings{
+  paschalides2021polar,
+  author = {Paschalides, Demetris and Pallis, George and Dikaiakos, Marios D.},
+  title = {POLAR: A Holistic Framework for the Modelling of Polarization and Identification of Polarizing Topics in News Media},
+  booktitle = {Proceedings of the 2021 IEEE/ACM International Conference on Advances in Social Networks Analysis and Mining},
+  series = {ASONAM '21}
+}
+```
+
+
