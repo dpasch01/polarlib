@@ -249,7 +249,7 @@ PARALLAX enables the use of polarization knowledge in supervised machine learnin
 
 ```bibtex
 @article{
-  10.1145/3703594,
+  paschalides2024polar,
   author = {Paschalides, Demetris and Pallis, George and Dikaiakos, Marios},
   title = {A Framework for the Unsupervised Modeling and Extraction of Polarization Knowledge from News Media},
   year = {2024},
