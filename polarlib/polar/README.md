@@ -1,4 +1,4 @@
-## POLARLib / POLAR
+## Polarlib / POLAR
 
 An end-to-end pipeline for unsupervised extraction and modeling of domain-specific Polarization Knowledge Graphs (PKGs) from news articles.
 
